@@ -1,0 +1,203 @@
+PROTOCOLO_UNIVERSAL_TRABAJO_AGENTES.md
+
+# 📘 PROTOCOLO UNIVERSAL DE EJECUCIÓN Y CONTROL DE AGENTES  
+## Nivel Crítico / SAT-Grade
+
+**Versión:** 1.0  
+**Aplicable a:** Cualquier app crítica (fiscal, SaaS, IA, fintech, legal)  
+**Principio rector:** Evidencia > Opinión > Velocidad
+
+---
+
+## 0️⃣ DECLARACIÓN DE CONTROL (OBLIGATORIA)
+
+Antes de iniciar cualquier tarea, el agente debe aceptar explícitamente:
+
+> “No ejecutaré cambios sin validación previa.  
+> No simplificaré procesos.  
+> No asumiré contexto.  
+> Trabajaré únicamente bajo evidencia verificable.”
+
+Si el agente no acepta → **el trabajo se cancela**.
+
+---
+
+## 1️⃣ DEFINICIÓN DEL PROBLEMA (SIN SOLUCIONES)
+**Responsable:** Humano / Arquitecto
+
+```text
+Problema observado:
+(qué no cuadra, qué no se ve, qué genera duda)
+
+Impacto:
+(fiscal / financiero / operativo / confianza)
+
+Contexto:
+(app, módulo, empresa, periodo)
+
+
+❌ Prohibido proponer soluciones en esta etapa.
+
+2️⃣ VERIFICACIÓN DE REALIDAD (FUENTE PRIMARIA)
+
+Responsable: Agente Verificador
+
+Si no sale de la fuente primaria, no existe.
+
+Ejemplos de fuentes primarias:
+
+Base de datos → SQL
+
+API externa → respuesta cruda
+
+Archivos → hash / conteo real
+
+Fuente primaria:
+(SQL / API / archivo)
+
+Query o comando exacto:
+(pegar literal)
+
+Resultado obtenido:
+(conteos / tablas / totales)
+
+3️⃣ DIAGNÓSTICO (SIN TOCAR CÓDIGO)
+
+Responsable: Agente Auditor
+
+Debe responder únicamente:
+
+¿Los datos existen?               Sí / No
+¿Están en el lugar esperado?      Sí / No
+¿Coinciden con la UI / reporte?   Sí / No
+
+Diferencia detectada:
+(descripción exacta, sin explicar causas)
+
+
+❌ No soluciones
+❌ No teorías
+❌ No “probablemente”
+
+4️⃣ PROPUESTA DE IMPLEMENTACIÓN (PRE-EJECUCIÓN)
+
+Responsable: Agente Implementador
+
+Objetivo del cambio:
+(qué va a mejorar exactamente)
+
+Alcance:
+(archivos / módulos que se tocarán)
+
+NO se tocará:
+(lo que explícitamente queda fuera)
+
+Riesgos:
+(bajo / medio / alto + motivo)
+
+Rollback:
+(cómo volver atrás si algo falla)
+
+
+Sin este bloque → no se ejecuta nada.
+
+5️⃣ AUTORIZACIÓN EXPLÍCITA
+
+Responsable: Humano
+
+Respuesta válida únicamente:
+
+AUTORIZO / NO AUTORIZO
+Condiciones adicionales (si aplica):
+
+
+Sin autorización → prohibido ejecutar.
+
+6️⃣ EJECUCIÓN CONTROLADA
+
+Responsable: Agente Implementador
+
+Reglas:
+
+Cambios mínimos
+
+Logs visibles
+
+Nada “de pasada”
+
+Nada fuera del alcance autorizado
+
+7️⃣ VERIFICACIÓN POST-IMPLEMENTACIÓN
+
+Responsable: Agente Verificador
+
+Fuente primaria re-verificada:
+(query / comando)
+
+Resultado nuevo:
+(conteos / diferencias)
+
+¿El resultado cuadra?
+Sí / No
+
+8️⃣ DICTAMEN FINAL
+
+Responsable: Agente Auditor
+
+Estado:
+✅ Aprobado
+❌ Rechazado
+
+Motivo:
+(con evidencia verificable)
+
+9️⃣ CRITERIOS DE CONFIANZA DE AGENTES
+Un agente ES confiable si:
+
+Pide autorización antes de actuar
+
+Muestra datos crudos
+
+Reconoce lo que no sabe
+
+No improvisa
+
+Prioriza evidencia sobre velocidad
+
+Un agente ES peligroso si:
+
+Simplifica sin permiso
+
+Asume contexto
+
+Oculta outputs
+
+“Arregla rápido”
+
+Evita mostrar SQL / fuente primaria
+
+🔒 REGLA FINAL UNIVERSAL
+
+Si no se puede auditar, no se puede confiar.
+
+Aplica para:
+
+Kontify · Sentinel
+
+Apps fiscales
+
+SaaS
+
+IA interna
+
+Dashboards financieros
+
+Automatizaciones críticas
+
+🛡️ ESTADO DEL PROTOCOLO
+
+✔ Aplicable a desarrollo
+✔ Aplicable a auditoría
+✔ Aplicable a producción
+✔ Compatible con SAT-Grade
+✔ Diseñado para control humano + IA

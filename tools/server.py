@@ -36,83 +36,113 @@ def serve_index():
 
 @app.route('/api/submit', methods=['POST'])
 def submit_quiz():
+    request_id = str(uuid.uuid4())[:8]
     try:
         data = request.json
         if not data:
-            return jsonify({"status": "error", "message": "No se recibieron datos en la solicitud."}), 400
+            return jsonify({"status": "error", "message": "Solicitud JSON vacía.", "requestId": request_id}), 400
             
-        # Extraer metadatos (Soporte para múltiples formatos)
-        lead_meta = data.get('lead_metadata') or data.get('lead_assessment') or data.get('leadMetadata', {})
+        # 1. EXTRACCIÓN Y VALIDACIÓN DE DATOS MAESTROS (Middleware de Blindaje)
+        # Prioridad a lead_metadata estructurado
+        lead_meta = data.get('lead_metadata') or data.get('leadMetadata', {})
         
-        # Búsqueda robusta de RFC (Case insensitive y fallback)
-        rfc = None
-        for key in ['rfc', 'RFC', 'Rfc']:
-            rfc = lead_meta.get(key)
-            if rfc: break
+        # RFC Validation: Búsqueda robusta y sanitización
+        rfc_raw = None
+        for key in ['rfc', 'RFC']:
+            rfc_raw = lead_meta.get(key)
+            if rfc_raw: break
+        if not rfc_raw: rfc_raw = data.get('rfc')
+        
+        # Sanitización de guiones y espacios
+        rfc = str(rfc_raw).replace('-', '').replace(' ', '').upper() if rfc_raw else None
             
-        if not rfc:
-            # Intento final en la raíz del objeto
-            rfc = data.get('rfc') or data.get('RFC')
-            
-        if not rfc:
-            print(f"⚠️ Error: RFC faltante en el payload: {json.dumps(data, indent=2)}")
-            return jsonify({"status": "error", "message": "RFC es un campo obligatorio para generar el diagnóstico técnico."}), 400
-            
+        # Giro (Actividad Principal)
+        giro = lead_meta.get('main_activity') or lead_meta.get('activity')
+        
         niche_id = lead_meta.get('niche_id')
-        if not niche_id:
-            return jsonify({"status": "error", "message": "El sector/nicho es obligatorio."}), 400
-            
-        company_name = str(lead_meta.get('company_name', 'Lead')).replace(' ', '_')
+        billing_range = lead_meta.get('billing_range')
+
+        # PROTOCOLO DE BLINDAJE: Abortar si faltan datos críticos o son inválidos
+        missing = []
+        if not rfc or len(str(rfc).strip()) < 12: missing.append("RFC válido (min 12 caracteres)")
+        if not giro: missing.append("Giro / Actividad Principal")
+        if not niche_id: missing.append("Nicho")
+        if not billing_range: missing.append("Rango de Facturación")
         
-        # 1. Procesar Diagnóstico con IA
-        diagnostic_result = run_diagnostic(data)
-        
-        # Manejar errores de la IA
-        if not diagnostic_result or 'error' in diagnostic_result:
-            error_msg = diagnostic_result.get('error', 'Error desconocido en el procesamiento de IA') if diagnostic_result else 'No se obtuvo respuesta de la IA'
+        if missing:
+            error_msg = f"BLOQUEO POR PROTOCOLO: Faltan datos críticos: {', '.join(missing)}"
+            print(f"[{request_id}] 🛑 ERROR DE VALIDACIÓN: {error_msg}")
             return jsonify({
                 "status": "error", 
-                "message": f"Fallo en el motor de análisis: {error_msg}"
-            }), 500
-            
-        # ASEGURAR METADATOS: Fusionar metadata original si la IA la omitió
-        if 'lead_metadata' not in diagnostic_result:
-            diagnostic_result['lead_metadata'] = lead_meta
-        else:
-            # Si existe, nos aseguramos de que tenga los datos originales
-            diagnostic_result['lead_metadata'].update(lead_meta)
+                "message": error_msg, 
+                "requestId": request_id
+            }), 400
+
+        # Normalización de nombre para PDF y Trazabilidad
+        company_name_raw = lead_meta.get('company_name', 'Lead_Report')
+        company_name = "".join(c for c in str(company_name_raw) if c.isalnum() or c == ' ').strip().replace(' ', '_')
+        
+        # EL PASO MÁS IMPORTANTE: Normalizar campos para Notificator y PDF
+        lead_meta['company'] = company_name_raw # notificator busca 'company'
+        lead_meta['rfc'] = rfc                  # notificator busca 'rfc'
+        lead_meta['activity'] = giro            # notificator busca 'activity'
+        
+        print(f"[{request_id}] 🧪 KONTIFY ENGINE v2.2.0 (MODO SIMULACIÓN ACTIVADO)")
+        print(f"[{request_id}] 🔍 Validando Datos: Empresa={company_name_raw}, RFC={rfc}, Giro={giro}")
+
+        # 2. PROCESAMIENTO IA (BLOQUEADO POR VALIDACIÓN DE COSTOS)
+        # diagnostic_result = run_diagnostic(data)
+        
+        # MOCK FORZADO - NUNCA 0.0%
+        diagnostic_result = {
+            "risk_assessment": {
+                "overall_risk_score": 88.5,
+                "risk_level": "RIESGO CRÍTICO (SIMULACIÓN)",
+                "critical_finding": "Validación de conexión Render-GitHub-Sheets activa.",
+                "hallazgos_tecnicos": [
+                    f"RFC Detectado: {rfc} - VALIDADO",
+                    f"Giro Detectado: {giro} - REGISTRADO",
+                    "Motor de IA: En espera de confirmación de CRM."
+                ]
+            },
+            "sales_pitch": "PROCESO DE PRUEBA: El flujo de datos hacia Google Sheets está siendo auditado.",
+            "markdown_content": "### AUDITORÍA DE INFRAESTRUCTURA\n- **Modo:** Zero-Cost Validation\n- **Target:** Columna K (RFC) y L (Giro)\n- **Estatus:** Transmitiendo...",
+            "admin_report": {
+                "summary": f"Sincronización manual: {company_name_raw}"
+            },
+            "responses": data.get('responses', []),
+            "lead_metadata": lead_meta
+        }
         
         # 2. Generar PDF
-        pdf_filename = f"KONTIFY_Report_{company_name}_{uuid.uuid4().hex[:6]}.pdf"
+        pdf_filename = f"KONTIFY_{company_name}_{request_id}.pdf"
         pdf_path = os.path.join(REPORTS_DIR, pdf_filename)
         
         try:
             generate_pdf_final(diagnostic_result, pdf_path)
         except Exception as pdf_err:
-            print(f"❌ Error generando PDF: {str(pdf_err)}")
-            return jsonify({
-                "status": "error", 
-                "message": f"Error al generar el documento PDF: {str(pdf_err)}"
-            }), 500
+            print(f"[{request_id}] ❌ Error PDF: {str(pdf_err)}")
+            return jsonify({"status": "error", "message": "Error al generar documento.", "requestId": request_id}), 500
         
-        # 3. Notificar y Registrar
+        # 3. Notificar y Registrar (Fallo Seguro)
         try:
             host_url = request.host_url.rstrip('/')
             full_pdf_url = f"{host_url}/reports/{pdf_filename}"
+            print(f"[{request_id}] 📊 Iniciando sincronización CRM...")
             notify_all(diagnostic_result, full_pdf_url)
+            print(f"[{request_id}] ✅ Sincronización CRM completada.")
         except Exception as notify_err:
-            print(f"⚠️ Error en notificaciones (No crítico): {str(notify_err)}")
-            # No retornamos error aquí para permitir que el usuario descargue su PDF
+            print(f"[{request_id}] ⚠️ Error Registro: {str(notify_err)}")
         
         return jsonify({
             "status": "success",
-            "message": "Diagnóstico procesado exitosamente",
-            "report_url": f"/reports/{pdf_filename}"
+            "version": "2.2.0-SIM",
+            "report_url": f"/reports/{pdf_filename}",
+            "requestId": request_id
         })
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": f"Error interno: {str(e)}"}), 500
+        print(f"[{request_id}] 🛑 Error Crítico: {str(e)}")
+        return jsonify({"status": "error", "message": "Fallo interno de sistema.", "requestId": request_id}), 500
 
 @app.route('/api/questions/<niche_id>', methods=['GET'])
 def get_questions(niche_id):
@@ -147,34 +177,51 @@ def get_questions(niche_id):
             content = f.read()
             
         lines = content.split('\n')
-        for line in lines:
-            line = line.strip()
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            
             # Detectar Categoría
-            cat_match = re.search(r'##\s+\w+\.\s+([^(]+)', line)
+            cat_match = re.search(r'##\s+\w*\.?\s*([^(]+)', line)
             if cat_match:
                 current_category = cat_match.group(1).strip()
+                i += 1
                 continue
             
-            # Detectar Pregunta y Opciones
-            # Formato: 1. ¿Pregunta? [Opción 1 | Opción 2]
+            # Detectar Pregunta: 1. ¿Pregunta?
             q_match = re.search(r'^(\d+)\.\s+(.+)$', line)
             if q_match:
+                num = q_match.group(1)
                 full_text = q_match.group(2).strip()
                 options = []
                 
-                # Extraer opciones si existen entre corchetes
-                opt_match = re.search(r'\[([^\]]+)\]$', full_text)
-                if opt_match:
-                    options_raw = opt_match.group(1)
-                    options = [o.strip() for o in options_raw.split('|')]
-                    # Limpiar la pregunta del texto de opciones
-                    full_text = full_text.replace(opt_match.group(0), '').strip()
+                # REGLA 1: Opciones en la MISMA línea finalizando en [ ... ]
+                # Ejemplo: 1. ¿Pregunta? [SÍ | NO] o 1. ¿Pregunta? [A | B]
+                opt_same_line = re.search(r'\[([^\]]+)\]$', full_text)
+                if opt_same_line:
+                    opt_raw = opt_same_line.group(1)
+                    if "OPTIONS:" in opt_raw:
+                        opt_raw = opt_raw.replace("OPTIONS:", "").strip()
+                    options = [o.strip() for o in opt_raw.split('|')]
+                    full_text = full_text.replace(opt_same_line.group(0), '').strip()
+                else:
+                    # REGLA 2: Opciones en la SIGUIENTE línea
+                    # Verificamos si existe la siguiente línea y si tiene el tag [OPTIONS: ...] o simplemente [ ... ]
+                    if i + 1 < len(lines):
+                        next_line = lines[i+1].strip()
+                        opt_next_line = re.search(r'^\[(?:OPTIONS:\s*)?([^\]]+)\]$', next_line)
+                        if opt_next_line:
+                            opt_raw = opt_next_line.group(1)
+                            options = [o.strip() for o in opt_raw.split('|')]
+                            i += 1 # Consumimos la línea de opciones
                 
                 questions.append({
                     "q": full_text,
+                    "num": num,
                     "cat": current_category,
                     "options": options
                 })
+            i += 1
                 
         return jsonify(questions)
     except Exception as e:

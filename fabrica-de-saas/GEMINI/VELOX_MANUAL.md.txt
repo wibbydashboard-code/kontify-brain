@@ -1,0 +1,142 @@
+VELOX: Manual Maestro de Ingeniería Agéntica (Gemini Edition)
+
+Versión: 7.0 (Full Gemini Integration)
+Stack: Next.js 16 (TS) + Supabase + Gemini 1.5 (Type-Safe) + Vercel
+Metodología: Bucle Agéntico (Delimitar → Deconstruir → Ejecutar → Validar)
+
+Este documento es la Fuente de Verdad Única. Sigue las fases estrictamente.
+
+🏗️ Fase 0: La Constitución del Proyecto (Contexto Gemini)
+
+Antes de escribir código, definimos las "Leyes de la Robótica" para que Gemini entienda tu proyecto.
+
+1. Definición de Reglas (GEMINI.md)
+
+Crea este archivo en la raíz. Este será el "cerebro" compartido del proyecto.
+
+# VELOX Project Rules (Gemini Protocol)
+
+## 1. Tech Stack (Strict Types)
+- **Frontend**: Next.js 16 (App Router), Tailwind CSS, Shadcn/UI, Lucide React.
+- **Backend**: Server Actions (Next.js), Zod Validation (OBLIGATORIO).
+- **Data**: Supabase (PostgreSQL + RLS).
+- **AI Engine**: Google Generative AI (via Vercel AI SDK) + Zod Structured Output.
+- **Testing**: Vitest + React Testing Library.
+
+## 2. Agentic Workflow (The Loop)
+Todo cambio sigue el protocolo de Ingeniería Agéntica:
+1. **Delimitar**: Definir qué es "éxito" (Success Criteria).
+2. **Ingeniería Inversa**: Desglosar dependencias antes de codificar.
+3. **Planificar**: Generar PRP detallado (ver `templates/prp_base.md`).
+4. **Ejecutar**: Iterar tarea por tarea.
+5. **Validar**: Niveles 1-4 (Lint -> Unit -> Integration -> E2E).
+
+## 3. Code Standards & Gotchas
+- **Feature-First**: Estructura `src/features/[feature]/`.
+- **Type-Safe AI**: NUNCA usar texto libre. La IA debe retornar JSON validado por Zod (`generateObject`).
+- **Supabase**: RLS debe estar activo. Usar `@supabase/ssr` para cookies.
+- **Testing**: No se aceptan Pull Requests sin tests unitarios.
+
+
+2. Setup de Herramientas (Gemini Native)
+
+Instalamos las dependencias para replicar la seguridad de tipos ("SKILL") en TypeScript:
+
+# Core & Data
+npm install @supabase/ssr @supabase/supabase-js zod lucide-react clsx tailwind-merge
+
+# AI Type-Safety (Gemini + Zod)
+npm install ai @ai-sdk/google zsa # zsa = Zod Server Actions (tipado estricto)
+
+# Testing (Niveles 2-3 de validación)
+npm install -D vitest @testing-library/react @vitejs/plugin-react jsdom
+
+
+🔄 El Bucle Agéntico (Ejecución por Módulo)
+
+Usa estos prompts exactos con Gemini para construir cada parte del sistema.
+
+🚚 Fase 1: Datos y Flota (Database Layer)
+
+Aplicando el Bucle Agéntico al núcleo.
+
+Prompt para Gemini:
+
+"Activa el modo Arquitecto de Datos.
+Objetivo: Definir esquema SQL robusto en supabase/migrations para el módulo Fleet.
+Base: Usa el template prp_base.md.
+Tablas: companies, units, contracts, maintenance_logs.
+Requerimiento Crítico: Incluir políticas RLS (Row Level Security).
+Niveles de Validación:
+
+Nivel 1: Sintaxis SQL válida.
+
+Nivel 3: Script SQL de prueba que inserte una unidad y verifique que existe."
+
+🧠 Fase 2: Motor de IA Agéntico (Type-Safe Agents)
+
+Aquí adaptamos el concepto de "Agentes Pydantic" a TypeScript + Zod. Esto evita que la IA "alucine" respuestas.
+
+Prompt para Gemini:
+
+"Activa el modo AI Engineer.
+Objetivo: Crear el motor de IA en src/features/ai usando @ai-sdk/google.
+Patrón: Type-Safe Agents (Gemini + Zod).
+Blueprint:
+
+Crear src/features/ai/gemini-client.ts.
+
+Implementar función generateObject (SDK Vercel AI) usando el modelo gemini-1.5-flash.
+
+Definir Agentes (Herramientas):
+
+RiskAnalyst: Input: Unit[]. Output: z.object({ riskLevel: z.enum(['Low','High']), reasoning: z.string() }).
+
+ContractExtractor: Input: string (OCR). Output: ContractSchema.
+
+MechanicExpert: Input: symptom. Output: DiagnosisSchema.
+Validación Nivel 2: Tests unitarios con Vitest que simulen respuestas JSON malformadas y aseguren que Zod las rechaza."
+
+✨ Fase 3: Integración UX (Interface Layer)
+
+Conectamos los agentes seguros a la interfaz visual.
+
+Prompt para Gemini:
+
+"Activa el modo Frontend Expert.
+Objetivo: UI de Gestión de Flotas y Contratos.
+Blueprint:
+
+UnitTable: Implementar con TanStack Table y filtros por columnas.
+
+ContractUpload: Modal que invoca al ContractExtractor Agent.
+
+Flujo: Subir -> Server Action (Gemini) -> Rellenar Formulario -> Guardar en Supabase.
+Validación Nivel 3: Test de integración simulando el flujo de 'Crear Unidad' completo."
+
+🛡️ Fase 4: Validación y Cierre (Quality Gate)
+
+Este paso es obligatorio antes de cerrar cualquier tarea. Gemini actuará como QA.
+
+Prompt para Gemini:
+
+"Activa el modo QA Specialist.
+Target: Todo el proyecto VELOX.
+
+Ejecuta Nivel 1: npm run type-check (0 errores permitidos).
+
+Ejecuta Nivel 2: npm run test (Vitest).
+
+Revisa supabase/migrations buscando tablas sin RLS.
+
+Si todo pasa en verde, genera el reporte de entrega."
+
+🚀 Guía de Inicio Rápido
+
+Contexto: Crea GEMINI.md en la raíz con las reglas de arriba.
+
+Instalación: Copia y pega el bloque de npm install.
+
+Ejecución: Copia el primer Prompt de la Fase 1 y pégalo en el chat.
+
+¡Estás listo para construir VELOX con arquitectura Enterprise y cero deuda técnica!

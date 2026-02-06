@@ -1,0 +1,160 @@
+GUÍA MAESTRA: PROYECTO VELOX (Antigravity Protocol v3.0)
+
+Esta guía contiene la secuencia exacta de prompts para construir VELOX (Gestión de Flota con IA) utilizando Next.js 16, Supabase, Vercel y Gemini AI.
+
+Instrucción para el Usuario: Copia y pega estos prompts en orden. No avances de fase hasta completar la anterior.
+
+📋 Fase 1: Cimientos, Base de Datos y Tipos
+
+Objetivo: Establecer la infraestructura "Database-First" y la seguridad RLS.
+
+👉 Prompt 1: Inicialización y Schema SQL
+
+"Actúa como Arquitecto Senior de Software (Protocolo Antigravity). Vamos a iniciar el proyecto VELOX.
+
+1. Stack Tecnológico:
+
+Framework: Next.js 16 (App Router) + TypeScript.
+
+DB: Supabase (PostgreSQL).
+
+UI: Tailwind CSS + shadcn/ui + Lucide React.
+
+Deploy: Vercel.
+
+2. Estructura de Carpetas (Feature-First):
+Genera los comandos de terminal para esta estructura:
+src/
+├── app/
+├── features/
+│   ├── dashboard/       # KPIs y Gráficas
+│   ├── fleet/           # Unidades (CRUD)
+│   ├── contracts/       # Contratos y Pagos
+│   ├── maintenance/     # Taller y Diagnóstico IA
+│   └── ai/              # Acciones de Gemini
+└── shared/              # components/ui, lib/supabase, types
+
+3. Definición de Base de Datos (SQL Robusto):
+Genera un archivo supabase/migrations/0001_initial_schema.sql con estas tablas (usa UUIDs y Foreign Keys):
+
+companies: id, name (Ej: Icold, Intra), rfc.
+
+units: id, company_id (FK), economic_number (Ej: I262), plate, type (Tracto, Caja, Utilitario), brand, status (Active, Maintenance, Down), image_url.
+
+contracts: id, unit_id (FK), provider_name (Ej: Paccar), contract_number, start_date, end_date, monthly_cost, type (Leasing, Insurance), doc_url.
+
+payments: id, contract_id (FK), amount, due_date, status (Pending, Paid, Overdue), invoice_url.
+
+4. Seguridad:
+Incluye en el SQL la activación de RLS (ALTER TABLE... ENABLE ROW LEVEL SECURITY) y políticas básicas de lectura/escritura pública para desarrollo."
+
+🎨 Fase 2: Diseño Atómico y Layout
+
+Objetivo: Replicar el diseño visual de index_flota (2).html usando componentes modernos.
+
+👉 Prompt 2: Sistema de Diseño y Layout
+
+"Tengo un diseño aprobado estilo 'Enterprise Dark' (Slate-800 sidebar, Slate-50 background).
+
+1. Configuración de UI:
+Instruye cómo instalar shadcn/ui y los componentes base: button, card, dialog, table, badge, progress, sheet.
+
+2. Componentes Estructurales:
+Genera el código para:
+
+src/shared/components/Sidebar.tsx: Fondo bg-slate-800. Links para Dashboard, Unidades, Contratos. Usa usePathname para resaltar el activo en bg-slate-700.
+
+src/shared/components/Header.tsx: Blanco, sombra suave, breadcrumbs y botón de usuario.
+
+src/app/layout.tsx: Integra Sidebar (fijo izquierda) y Header (scrollable derecha).
+
+3. Tipografía:
+Configura next/font con la familia 'Inter' para todo el body."
+
+🚚 Fase 3: Lógica de Negocio y Server Actions
+
+Objetivo: Conectar la UI con Supabase usando Server Actions seguras y Zod.
+
+👉 Prompt 3: Dashboard y Gestión de Flota
+
+"Implementemos la lógica 'Backend-for-Frontend' con Server Actions.
+
+1. Feature: Dashboard (src/features/dashboard)
+
+Crea actions/get-dashboard-metrics.ts: Consulta a Supabase para contar:
+
+Total Unidades.
+
+Contratos Activos.
+
+Pagos Vencidos (Join con tabla payments donde status='Overdue').
+
+Pagos Próximos (30 días).
+
+Crea components/KPIGrid.tsx: Visualiza los 4 números en tarjetas (replica el HTML original).
+
+2. Feature: Unidades (src/features/fleet)
+
+Crea actions/get-units.ts: Debe aceptar parámetros de filtro (company_id, status) y paginación.
+
+Crea components/UnitTable.tsx: Usa TanStack Table (o tabla simple de shadcn).
+
+Columnas: Económico, Placa, Tipo, Empresa, Badge de Estatus.
+
+Acción: Botón 'Ver Detalles' que abre un Sheet/Modal.
+
+Nota: Usa Zod para validar cualquier input en las Server Actions."
+
+🧠 Fase 4: Inteligencia Artificial (Backend Gemini)
+
+Objetivo: Crear las "neuronas" que procesan datos complejos.
+
+👉 Prompt 4: Motor de IA (Gemini)
+
+"Configura el cerebro de VELOX. Usa el SDK google-generative-ai.
+
+Crea src/features/ai/actions/gemini.ts con estas 3 funciones exportadas:
+
+analyzeFleetRisks(units: Unit[]):
+
+Prompt: 'Analiza este JSON de unidades. Identifica patrones de riesgo (ej: muchos camiones viejos en una sola empresa) y suguiere rotación. Retorna JSON: { summary, critical_risks[], savings_opportunities[] }'.
+
+extractContractData(ocrText: string):
+
+Prompt: 'Eres un abogado experto. Extrae de este texto de contrato: proveedor, fechas, costo mensual y tipo. Retorna JSON exacto para insertar en DB'.
+
+predictMaintenance(symptoms: string, vehicleModel: string):
+
+Prompt: 'Actúa como Mecánico Jefe. Para este síntoma en este modelo, dame: Causas probables (con % probabilidad), Severidad (Alta/Media/Baja) y Acción recomendada'.
+
+Requisito: Configura la respuesta de Gemini para que sea responseMimeType: 'application/json'."
+
+✨ Fase 5: Integración Final (UI + IA)
+
+Objetivo: Conectar los "Botones Mágicos" en la interfaz.
+
+👉 Prompt 5: Experiencia de Usuario IA
+
+"Vamos a hacer la UI inteligente.
+
+1. Modal de Análisis de Contratos (src/features/contracts)
+
+Crea un componente ContractUploadModal.
+
+Flujo: El usuario pega texto (o simula subida OCR).
+
+Al hacer click en 'Analizar con IA', llama a extractContractData.
+
+Rellena automáticamente los inputs del formulario con la respuesta.
+
+2. Asistente de Taller (src/features/maintenance)
+
+Crea un formulario donde el mecánico describe 'Ruido en frenos'.
+
+Muestra una tarjeta de 'Diagnóstico VELOX' con la respuesta de predictMaintenance, usando colores de semáforo para la severidad.
+
+3. Pulido Final:
+
+Añade 'Skeletons' de carga para las llamadas a la IA.
+
+Usa sonner para mostrar notificaciones Toast de éxito/error."

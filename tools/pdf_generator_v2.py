@@ -3,10 +3,14 @@ import json
 from fpdf import FPDF
 import datetime
 import math
+import unicodedata
 
 class DiagnosticPDF(FPDF):
     def __init__(self):
         super().__init__()
+        # Usar fuentes core que soportan latin-1 básico por defecto, 
+        # fpdf2 maneja mejor Unicode pero para acentos/ñ requerimos fuentes específicas
+        # o normalizar. Dado que es un entorno sin fuentes locales aseguradas:
         self.folio = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         self.primary_color = (0, 123, 255)   # Electric Blue
         self.dark_color = (33, 37, 41)       # Dark Gray/Black
@@ -98,26 +102,31 @@ class DiagnosticPDF(FPDF):
         self.set_font('helvetica', 'B', 14)
         self.cell(40, 10, f"{score}%", 0, 0, 'C')
 
+import unicodedata
+
 def safe_text(txt):
-    """Limpia texto de forma agresiva para evitar el error 'latin-1' en FPDF"""
-    if txt is None: return "No proporcionado"
+    """
+    Normalización de Texto para fpdf2 (Protocolo PMDS-IA).
+    Permite acentos y 'ñ' para fuentes core (Helvetica/Arial) usando latin-1.
+    """
+    if txt is None: return "N/A"
     if not isinstance(txt, str): txt = str(txt)
     
-    # Reemplazos manuales para caracteres comunes de alta gama (Unicode)
+    # Reemplazo de caracteres Unicode "fancy" que rompen fuentes estándar
     replacements = {
-        '\u2013': '-', '\u2014': '-',
-        '\u2018': "'", '\u2019': "'",
-        '\u201c': '"', '\u201d': '"',
-        '\u2022': '*', '\u2026': '...',
-        '\u00a0': ' ', '\u200b': '',
-        '\u2122': '(TM)', '\u00ae': '(R)', '\u00a9': '(C)',
+        '\u2013': '-', '\u2014': '-', '\u201c': '"', '\u201d': '"',
+        '\u2018': "'", '\u2019': "'", '\u2022': '*', '\u2026': '...',
+        '\u00a0': ' ', '\ufeff': '', '\u200b': ''
     }
     for k, v in replacements.items():
         txt = txt.replace(k, v)
-        
-    # El truco final: Codificar a latin-1 ignorando lo que NO sea latin-1
-    # FPDF 1.7 usa latin-1 internamente. ñ, á, é, í, ó, ú están en latin-1.
-    return txt.encode('latin-1', 'replace').decode('latin-1')
+
+    # Intentar codificar a latin-1 (soporta á, é, í, ó, ú, ñ, ¿, ¡)
+    try:
+        return txt.encode('latin-1', 'replace').decode('latin-1')
+    except:
+        # Fallback a ASCII si hay algo catastrófico
+        return txt.encode('ascii', 'ignore').decode('ascii')
 
 def generate_pdf_final(json_data, output_path):
     pdf = DiagnosticPDF()
@@ -125,8 +134,10 @@ def generate_pdf_final(json_data, output_path):
     pdf.add_page()
     
     data = json_data.get('diagnostic_payload', json_data)
-    lead_meta = data.get('lead_metadata', {})
-    risk = data.get('risk_assessment', {})
+    lead_meta = json_data.get('lead_metadata', data.get('lead_metadata', {}))
+    
+    # Fallback robusto para Risk Assessment
+    risk = data.get('risk_assessment') or data.get('lead_assessment') or data.get('admin_report', {})
     
     # --- HERO SECTION ---
     pdf.set_fill_color(*pdf.bg_color)
@@ -139,22 +150,24 @@ def generate_pdf_final(json_data, output_path):
     
     pdf.set_text_color(*pdf.dark_color)
     pdf.set_font('helvetica', 'B', 11)
-    company = lead_meta.get('company_name', 'Lead Assessment').upper()
-    rfc = lead_meta.get('rfc', 'N/A').upper()
-    giro = lead_meta.get('main_activity', lead_meta.get('activity', 'N/A')).upper()
+    company = str(lead_meta.get('company_name', 'Lead Assessment')).upper()
+    rfc = str(lead_meta.get('rfc', 'N/A')).upper()
+    giro = str(lead_meta.get('main_activity', lead_meta.get('activity', 'N/A'))).upper()
     
     pdf.cell(0, 7, safe_text(f"CLIENTE: {company}"), 0, 1)
     pdf.set_font('helvetica', 'B', 9)
     pdf.cell(0, 5, safe_text(f"RFC: {rfc} | GIRO: {giro}"), 0, 1)
     pdf.ln(2)
     
-    # Gauge Score
-    score = risk.get('overall_risk_score', 0)
+    # Gauge Score (Buscar en múltiples lugares)
+    score = risk.get('overall_risk_score', risk.get('risk_score', risk.get('score', 0)))
+    if score == 0 and 'score' in data: score = data['score']
+    
     pdf.draw_gauge(170, 60, score)
     
     pdf.set_xy(15, 75)
     pdf.set_font('helvetica', 'B', 10)
-    status_text = "RIESGO CRÍTICO" if score > 70 else "VULNERABILIDAD MODERADA" if score > 30 else "VIGILANCIA PREVENTIVA"
+    status_text = "RIESGO CRÍTICO" if float(score) > 70 else "VULNERABILIDAD MODERADA" if float(score) > 30 else "VIGILANCIA PREVENTIVA"
     pdf.cell(100, 5, safe_text(f"ESTADO DE SALUD CORPORATIVA: {status_text}"), 0, 1)
     
     pdf.ln(15)
@@ -194,7 +207,7 @@ def generate_pdf_final(json_data, output_path):
         pdf.ln(10)
 
     # --- PITCH SECTION (Strategic Recommendation) ---
-    pitch = data.get('sales_pitch', '')
+    pitch = data.get('sales_pitch') or risk.get('summary') or risk.get('recommendation') or "Requiere intervención inmediata."
     if isinstance(pitch, dict): pitch = pitch.get('urgent_recommendation', 'Requiere intervención inmediata.')
     
     pdf.set_fill_color(255, 255, 255)
@@ -222,10 +235,50 @@ def generate_pdf_final(json_data, output_path):
     pdf.set_font('helvetica', '', 10)
     pdf.set_text_color(30, 30, 30)
     
-    content = data.get('markdown_content', '')
-    processed_content = content.replace('**', '').replace('#', '').replace('*', '*')
+    content = data.get('markdown_content') or data.get('findings') or data.get('risk_analysis') or "Análisis técnico pendiente de validación."
+    if isinstance(content, list): content = "\n".join(content)
+    
+    processed_content = str(content).replace('**', '').replace('#', '').replace('*', '*')
     
     pdf.multi_cell(0, 5.5, safe_text(processed_content), 1, 'L', fill=True)
+    pdf.ln(10)
+
+    # --- ANSWERS DETAIL SECTION ---
+    responses = data.get('responses', [])
+    if responses:
+        pdf.add_page()
+        pdf.set_font('helvetica', 'B', 14)
+        pdf.set_text_color(*pdf.primary_color)
+        pdf.cell(0, 10, safe_text("DETALLE DE RESPUESTAS TÉCNICAS"), 0, 1)
+        pdf.ln(5)
+        
+        pdf.set_font('helvetica', '', 9)
+        pdf.set_text_color(50, 50, 50)
+        
+        for idx, resp in enumerate(responses):
+            q_text = f"{idx+1}. {resp.get('question', 'Pregunta sin texto')}"
+            a_text = str(resp.get('answer', 'N/A')).upper()
+            
+            # Dibujar Pregunta
+            pdf.set_font('helvetica', 'B', 9)
+            pdf.multi_cell(0, 5, safe_text(q_text), 0, 'L')
+            
+            # Dibujar Respuesta
+            pdf.set_font('helvetica', 'B', 9)
+            if a_text in ['SÍ', 'SI']:
+                pdf.set_text_color(*pdf.primary_color)
+            elif a_text == 'NO':
+                pdf.set_text_color(*pdf.danger_color)
+            else:
+                pdf.set_text_color(100, 100, 100)
+            
+            pdf.cell(10, 5, "   > ", 0, 0)
+            pdf.cell(0, 5, safe_text(a_text), 0, 1)
+            pdf.set_text_color(50, 50, 50)
+            pdf.ln(2)
+            
+            if pdf.get_y() > 250:
+                pdf.add_page()
     
     pdf.output(output_path)
     print(f"✅ PDF Executivo Big Four generado exitosamente en: {output_path}")

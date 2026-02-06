@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitectura de Agentes Locales con Claude</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e8e8e8;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+        }
+
+        .architecture {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .layer {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .layer:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .layer-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .layer-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .layer-1 .layer-number { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .layer-2 .layer-number { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .layer-3 .layer-number { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        .layer-4 .layer-number { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+        .layer-5 .layer-number { background: linear-gradient(135deg, #fa709a, #fee140); }
+
+        .layer-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .layer-content {
+            display: none;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 15px;
+            animation: slideDown 0.3s ease;
+        }
+
+        .layer-content.active {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .component {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .component:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .component h4 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            color: #00d4ff;
+        }
+
+        .component ul {
+            list-style: none;
+            font-size: 0.9rem;
+            color: #b0b0b0;
+        }
+
+        .component li {
+            padding: 4px 0;
+            padding-left: 15px;
+            position: relative;
+        }
+
+        .component li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #666;
+        }
+
+        .icon {
+            font-size: 1.2rem;
+        }
+
+        /* Flow Diagram */
+        .flow-section {
+            margin-top: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .flow-section h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #00d4ff;
+        }
+
+        .flow-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .flow-node {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 500;
+            text-align: center;
+            min-width: 200px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .flow-node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: #666;
+        }
+
+        .flow-branches {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .flow-branch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .flow-node.agent-docs { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .flow-node.agent-props { background: linear-gradient(135deg, #4facfe, #00f2fe); color: #1a1a2e; }
+        .flow-node.agent-cobro { background: linear-gradient(135deg, #43e97b, #38f9d7); color: #1a1a2e; }
+        .flow-node.agent-report { background: linear-gradient(135deg, #fa709a, #fee140); color: #1a1a2e; }
+
+        .flow-node.tool {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.85rem;
+            padding: 10px 20px;
+            min-width: 150px;
+        }
+
+        /* Code Section */
+        .code-section {
+            margin-top: 40px;
+        }
+
+        .code-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .code-tab {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            color: #e8e8e8;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .code-tab:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .code-tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .code-content {
+            display: none;
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .code-content.active {
+            display: block;
+        }
+
+        pre {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #c9d1d9;
+        }
+
+        .comment { color: #8b949e; }
+        .keyword { color: #ff7b72; }
+        .string { color: #a5d6ff; }
+        .function { color: #d2a8ff; }
+        .variable { color: #ffa657; }
+
+        /* Connector Lines */
+        .connector {
+            width: 2px;
+            height: 30px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+            margin: 0 auto;
+        }
+
+        /* Toggle Button */
+        .toggle-all {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .toggle-all:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .components-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .flow-branches {
+                flex-direction: column;
+            }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 8px;
+        }
+
+        .badge-recommended {
+            background: #43e97b;
+            color: #1a1a2e;
+        }
+
+        .badge-advanced {
+            background: #f5576c;
+            color: white;
+        }
+
+        .badge-visual {
+            background: #4facfe;
+            color: #1a1a2e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Arquitectura de Agentes Locales con Claude</h1>
+            <p>Mapa conceptual interactivo - Click en cada capa para explorar</p>
+        </header>
+
+        <div class="architecture">
+            <!-- Layer 1: Frontend -->
+            <div class="layer layer-1" onclick="toggleLayer(this)">
+                <div class="layer-header">
+                    <div class="layer-number">1</div>
+                    <div class="layer-title">🖥️ Frontend (Interfaz de Usuario)</div>
+                </div>
+                <div class="layer-content">
+                    <div class="components-grid">
+                        <div class="component">
+                            <h4><span class="icon">⚛️</span> React / SolidJS</h4>
+                            <ul>
+                                <li>Tu stack actual</li>
+                                <li>Interfaz de chat</li>
+                                <li>Dashboard de gestión</li>
+                                <li>Visualización de resultados</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">🔥</span> Hono + Bun</h4>
+                            <ul>
+                                <li>API endpoints locales</li>
+                                <li>Server-side rendering</li>
+                                <li>WebSocket para streaming</li>
+                                <li>Ultra rápido y ligero</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">💻</span> Terminal CLI</h4>
+                            <ul>
+                                <li>Claude Code integration</li>
+                                <li>Comandos directos</li>
+                                <li>Scripts automatizados</li>
+                                <li>Ideal para desarrollo</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="connector"></div>
+
+            <!-- Layer 2: Supervisor -->
+            <div class="layer layer-2" onclick="toggleLayer(this)">
+                <div class="layer-header">
+                    <div class="layer-number">2</div>
+                    <div class="layer-title">🧠 Supervisor Agent (Orquestador)</div>
+                </div>
+                <div class="layer-content">
+                    <div class="components-grid">
+                        <div class="component">
+                            <h4><span class="icon">🎯</span> Funciones del Supervisor</h4>
+                            <ul>
+                                <li>Recibe mensaje del usuario</li>
+                                <li>Analiza intención y contexto</li>
+                                <li>Selecciona agente apropiado</li>
+                                <li>Coordina multi-agentes si es necesario</li>
+                                <li>Consolida respuestas finales</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">🐍</span> Python + Anthropic SDK <span class="badge badge-recommended">Recomendado</span></h4>
+                            <ul>
+                                <li>Más documentación disponible</li>
+                                <li>Fácil integración con OCR</li>
+                                <li>Bibliotecas maduras</li>
+                                <li>Ideal para empezar</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">🟦</span> Bun + TypeScript <span class="badge badge-advanced">Avanzado</span></h4>
+                            <ul>
+                                <li>Consistencia con tu frontend</li>
+                                <li>Performance superior</li>
+                                <li>Un solo lenguaje full-stack</li>
+                                <li>Hot reload nativo</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">🔄</span> n8n Orquestador <span class="badge badge-visual">Visual</span></h4>
+                            <ul>
+                                <li>Sin código para flujos</li>
+                                <li>Fácil debugging visual</li>
+                                <li>Integración con 400+ apps</li>
+                                <li>Ya lo conoces bien</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="connector"></div>
+
+            <!-- Layer 3: Specialized Agents -->
+            <div class="layer layer-3" onclick="toggleLayer(this)">
+                <div class="layer-header">
+                    <div class="layer-number">3</div>
+                    <div class="layer-title">🤖 Agentes Especializados</div>
+                </div>
+                <div class="layer-content">
+                    <div class="components-grid">
+                        <div class="component">
+                            <h4><span class="icon">📄</span> Agente Documentos</h4>
+                            <ul>
+                                <li>OCR con Tesseract/Textract</li>
+                                <li>Procesamiento de PDFs</li>
+                                <li>Extracción de datos</li>
+                                <li>Validación de documentos chilenos</li>
+                                <li>Integración GPT-4 Vision</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">🏠</span> Agente Propiedades</h4>
+                            <ul>
+                                <li>CRUD en HogarixV2</li>
+                                <li>Gestión de contratos</li>
+                                <li>Control de arriendos</li>
+                                <li>39 unidades de renta</li>
+                                <li>Stored Procedures SQL</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">💰</span> Agente Cobranza</h4>
+                            <ul>
+                                <li>Seguimiento de pagos</li>
+                                <li>Notificaciones automáticas</li>
+                                <li>WhatsApp integration</li>
+                                <li>Sistema semáforo (colores)</li>
+                                <li>Gestión de deudas</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">📊</span> Agente Reportes</h4>
+                            <ul>
+                                <li>Consultas SQL Server</li>
+                                <li>Análisis de datos</li>
+                                <li>Generación de gráficos</li>
+                                <li>Exportación Excel/PDF</li>
+                                <li>KPIs automatizados</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="connector"></div>
+
+            <!-- Layer 4: Tools -->
+            <div class="layer layer-4" onclick="toggleLayer(this)">
+                <div class="layer-header">
+                    <div class="layer-number">4</div>
+                    <div class="layer-title">🔧 Herramientas (Tools)</div>
+                </div>
+                <div class="layer-content">
+                    <div class="components-grid">
+                        <div class="component">
+                            <h4><span class="icon">👁️</span> OCR / Visión</h4>
+                            <ul>
+                                <li>Tesseract (local, gratis)</li>
+                                <li>AWS Textract (cloud)</li>
+                                <li>GPT-4 Vision</li>
+                                <li>Claude Vision</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">🗄️</span> Bases de Datos</h4>
+                            <ul>
+                                <li>SQL Server (HogarixV2)</li>
+                                <li>138+ tablas existentes</li>
+                                <li>244+ stored procedures</li>
+                                <li>SQLite para cache local</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">📱</span> Comunicación</h4>
+                            <ul>
+                                <li>WhatsApp Business API</li>
+                                <li>SMTP para emails</li>
+                                <li>Webhooks</li>
+                                <li>Push notifications</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">🔗</span> Integraciones</h4>
+                            <ul>
+                                <li>Google Sheets API</li>
+                                <li>n8n workflows</li>
+                                <li>File system local</li>
+                                <li>APIs externas</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="connector"></div>
+
+            <!-- Layer 5: Persistence -->
+            <div class="layer layer-5" onclick="toggleLayer(this)">
+                <div class="layer-header">
+                    <div class="layer-number">5</div>
+                    <div class="layer-title">💾 Persistencia y Contexto (RAG)</div>
+                </div>
+                <div class="layer-content">
+                    <div class="components-grid">
+                        <div class="component">
+                            <h4><span class="icon">🏢</span> SQL Server</h4>
+                            <ul>
+                                <li>Datos de negocio principal</li>
+                                <li>Tu infraestructura actual</li>
+                                <li>Transacciones ACID</li>
+                                <li>Reportes complejos</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">🔍</span> Vector DB Local</h4>
+                            <ul>
+                                <li>ChromaDB (Python)</li>
+                                <li>LanceDB (Rust, más rápido)</li>
+                                <li>Embeddings locales</li>
+                                <li>Búsqueda semántica</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">📝</span> Memoria de Sesión</h4>
+                            <ul>
+                                <li>Archivos JSON locales</li>
+                                <li>Historial de chat</li>
+                                <li>Contexto de conversación</li>
+                                <li>Redis para cache</li>
+                            </ul>
+                        </div>
+                        <div class="component">
+                            <h4><span class="icon">📚</span> Knowledge Base</h4>
+                            <ul>
+                                <li>Documentos indexados</li>
+                                <li>FAQs y procedimientos</li>
+                                <li>Contratos template</li>
+                                <li>Base de precios (745 items)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flow Diagram -->
+        <div class="flow-section">
+            <h2>🔄 Flujo de Ejecución</h2>
+            <div class="flow-diagram">
+                <div class="flow-node tooltip" data-tooltip="El usuario envía un mensaje">
+                    👤 Usuario envía mensaje
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-node tooltip" data-tooltip="Claude analiza y decide qué agente usar">
+                    🧠 Supervisor analiza intención
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-branches">
+                    <div class="flow-branch">
+                        <div class="flow-node agent-docs tooltip" data-tooltip="Procesa documentos y OCR">📄 Docs</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-node tool">Tesseract / Vision</div>
+                    </div>
+                    <div class="flow-branch">
+                        <div class="flow-node agent-props tooltip" data-tooltip="Gestiona propiedades">🏠 Props</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-node tool">SQL Server</div>
+                    </div>
+                    <div class="flow-branch">
+                        <div class="flow-node agent-cobro tooltip" data-tooltip="Gestiona cobranzas">💰 Cobro</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-node tool">WhatsApp / Email</div>
+                    </div>
+                    <div class="flow-branch">
+                        <div class="flow-node agent-report tooltip" data-tooltip="Genera reportes">📊 Report</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-node tool">Analytics</div>
+                    </div>
+                </div>
+                <div class="flow-arrow" style="margin-top: 20px;">↓</div>
+                <div class="flow-node" style="background: linear-gradient(135deg, #43e97b, #38f9d7); color: #1a1a2e;">
+                    ✅ Respuesta consolidada al usuario
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Examples -->
+        <div class="code-section">
+            <h2 style="text-align: center; margin-bottom: 20px; color: #00d4ff;">💻 Código de Ejemplo</h2>
+            <div class="code-tabs">
+                <button class="code-tab active" onclick="showCode('python')">🐍 Python</button>
+                <button class="code-tab" onclick="showCode('typescript')">🟦 TypeScript</button>
+                <button class="code-tab" onclick="showCode('n8n')">🔄 n8n Config</button>
+            </div>
+
+            <div class="code-content active" id="code-python">
+                <pre><span class="comment"># supervisor.py - Orquestador principal</span>
+<span class="keyword">from</span> anthropic <span class="keyword">import</span> Anthropic
+
+client = Anthropic()
+
+<span class="variable">AGENTES</span> = {
+    <span class="string">"documentos"</span>: <span class="string">"Especialista en OCR y procesamiento"</span>,
+    <span class="string">"propiedades"</span>: <span class="string">"Gestiona arriendos en HogarixV2"</span>,
+    <span class="string">"cobranza"</span>: <span class="string">"Seguimiento de pagos y deudas"</span>,
+    <span class="string">"reportes"</span>: <span class="string">"Análisis y consultas SQL"</span>,
+}
+
+<span class="keyword">def</span> <span class="function">supervisor</span>(mensaje: <span class="variable">str</span>) -> <span class="variable">str</span>:
+    <span class="comment"># El supervisor decide qué agente usar</span>
+    response = client.messages.create(
+        model=<span class="string">"claude-sonnet-4-20250514"</span>,
+        max_tokens=<span class="variable">1024</span>,
+        system=<span class="string">f"""Eres un supervisor de agentes.
+Agentes disponibles: {AGENTES}
+Analiza el mensaje y responde SOLO con el nombre del agente."""</span>,
+        messages=[{<span class="string">"role"</span>: <span class="string">"user"</span>, <span class="string">"content"</span>: mensaje}]
+    )
+    
+    agente = response.content[<span class="variable">0</span>].text.strip().lower()
+    <span class="keyword">return</span> <span class="function">ejecutar_agente</span>(agente, mensaje)
+
+<span class="keyword">def</span> <span class="function">ejecutar_agente</span>(agente: <span class="variable">str</span>, mensaje: <span class="variable">str</span>) -> <span class="variable">str</span>:
+    <span class="comment"># Cada agente tiene su propio prompt y tools</span>
+    prompts = {
+        <span class="string">"documentos"</span>: <span class="string">"Eres experto en OCR..."</span>,
+        <span class="string">"propiedades"</span>: <span class="string">"Tienes acceso a HogarixV2..."</span>,
+    }
+    <span class="comment"># ... implementación</span></pre>
+            </div>
+
+            <div class="code-content" id="code-typescript">
+                <pre><span class="comment">// supervisor.ts - Bun + Hono</span>
+<span class="keyword">import</span> Anthropic <span class="keyword">from</span> <span class="string">"@anthropic-ai/sdk"</span>;
+<span class="keyword">import</span> { Hono } <span class="keyword">from</span> <span class="string">"hono"</span>;
+
+<span class="keyword">const</span> client = <span class="keyword">new</span> <span class="function">Anthropic</span>();
+<span class="keyword">const</span> app = <span class="keyword">new</span> <span class="function">Hono</span>();
+
+<span class="keyword">const</span> <span class="variable">tools</span> = [
+  {
+    name: <span class="string">"consultar_propiedad"</span>,
+    description: <span class="string">"Busca info en HogarixV2"</span>,
+    input_schema: {
+      type: <span class="string">"object"</span>,
+      properties: {
+        id_propiedad: { type: <span class="string">"number"</span> },
+      },
+    },
+  },
+  {
+    name: <span class="string">"enviar_notificacion"</span>,
+    description: <span class="string">"Envía WhatsApp o email"</span>,
+    input_schema: {
+      type: <span class="string">"object"</span>,
+      properties: {
+        destinatario: { type: <span class="string">"string"</span> },
+        mensaje: { type: <span class="string">"string"</span> },
+        canal: { enum: [<span class="string">"whatsapp"</span>, <span class="string">"email"</span>] },
+      },
+    },
+  },
+];
+
+app.<span class="function">post</span>(<span class="string">"/chat"</span>, <span class="keyword">async</span> (c) => {
+  <span class="keyword">const</span> { mensaje } = <span class="keyword">await</span> c.req.<span class="function">json</span>();
+  
+  <span class="keyword">const</span> response = <span class="keyword">await</span> client.messages.<span class="function">create</span>({
+    model: <span class="string">"claude-sonnet-4-20250514"</span>,
+    max_tokens: <span class="variable">4096</span>,
+    tools,
+    messages: [{ role: <span class="string">"user"</span>, content: mensaje }],
+  });
+
+  <span class="comment">// Procesar tool_use y ejecutar</span>
+  <span class="keyword">return</span> c.<span class="function">json</span>(response);
+});
+
+<span class="keyword">export default</span> app;</pre>
+            </div>
+
+            <div class="code-content" id="code-n8n">
+                <pre><span class="comment">// n8n-workflow.json</span>
+{
+  <span class="string">"name"</span>: <span class="string">"Supervisor Agentes Claude"</span>,
+  <span class="string">"nodes"</span>: [
+    {
+      <span class="string">"name"</span>: <span class="string">"Webhook Entrada"</span>,
+      <span class="string">"type"</span>: <span class="string">"n8n-nodes-base.webhook"</span>,
+      <span class="string">"parameters"</span>: {
+        <span class="string">"path"</span>: <span class="string">"agente-chat"</span>,
+        <span class="string">"method"</span>: <span class="string">"POST"</span>
+      }
+    },
+    {
+      <span class="string">"name"</span>: <span class="string">"Claude Supervisor"</span>,
+      <span class="string">"type"</span>: <span class="string">"@n8n/n8n-nodes-langchain.agent"</span>,
+      <span class="string">"parameters"</span>: {
+        <span class="string">"model"</span>: <span class="string">"claude-sonnet-4-20250514"</span>,
+        <span class="string">"systemMessage"</span>: <span class="string">"Eres supervisor..."</span>
+      }
+    },
+    {
+      <span class="string">"name"</span>: <span class="string">"Switch Agente"</span>,
+      <span class="string">"type"</span>: <span class="string">"n8n-nodes-base.switch"</span>,
+      <span class="string">"parameters"</span>: {
+        <span class="string">"rules"</span>: [
+          { <span class="string">"value"</span>: <span class="string">"documentos"</span> },
+          { <span class="string">"value"</span>: <span class="string">"propiedades"</span> },
+          { <span class="string">"value"</span>: <span class="string">"cobranza"</span> }
+        ]
+      }
+    }
+  ]
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <button class="toggle-all" onclick="toggleAll()">
+        📂 Expandir Todo
+    </button>
+
+    <script>
+        let allExpanded = false;
+
+        function toggleLayer(element) {
+            const content = element.querySelector('.layer-content');
+            content.classList.toggle('active');
+        }
+
+        function toggleAll() {
+            allExpanded = !allExpanded;
+            const contents = document.querySelectorAll('.layer-content');
+            const button = document.querySelector('.toggle-all');
+            
+            contents.forEach(content => {
+                if (allExpanded) {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+
+            button.textContent = allExpanded ? '📁 Colapsar Todo' : '📂 Expandir Todo';
+        }
+
+        function showCode(lang) {
+            // Remove active from all tabs and contents
+            document.querySelectorAll('.code-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.code-content').forEach(content => content.classList.remove('active'));
+
+            // Add active to selected
+            event.target.classList.add('active');
+            document.getElementById('code-' + lang).classList.add('active');
+        }
+
+        // Expand first layer by default
+        document.querySelector('.layer-1 .layer-content').classList.add('active');
+    </script>
+</body>
+</html>

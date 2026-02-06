@@ -2,7 +2,7 @@ flask
 flask-cors
 google-generativeai
 python-dotenv
-fpdf
+fpdf2
 gspread
 google-auth
 requests

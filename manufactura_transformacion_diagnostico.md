@@ -3,8 +3,8 @@
 **Objetivo:** Evaluación de Costeo, Activos Fijos, Cumplimiento Laboral y Eficiencia Operativa.
 
 ## I. Estructura y Propiedad (Q1-Q10)
-1. ¿Cuál es la figura legal predominante en su empresa? [S.A. Tradicional | SAPI | Capital Extranjero | Mixto]
-2. ¿La planta física es propiedad de la operativa o está en una PropCo dedicada?
+1. ¿Cuál es la figura legal predominante en su empresa? [S.A. Tradicional | SAPI | Capital Extranjero | Mixto | Persona Física]
+2. ¿La planta física es propiedad de la operativa o está en una PropCo dedicada? [PropCo dedicada | Propiedad de la operativa | Arrendada a terceros | Propiedad de socios]
 3. ¿Tiene el objeto social actualizado para incluir procesos de transformación específicos?
 4. ¿Cuenta con una estructura Holding para separar la propiedad de las patentes y marcas?
 5. ¿Tiene protocolizados sus libros de accionistas y variaciones de capital?
@@ -50,7 +50,7 @@
 
 ## IV. Cumplimiento Laboral y Seguridad (Q41-Q55)
 41. ¿Tiene el registro REPSE para sus proveedores de servicios especializados?
-42. ¿La nómina de producción está en una empresa diferente a la dueña de la maquinaria?
+42. ¿La de nómina de producción está en una empresa diferente a la dueña de la maquinaria? [Sí, vía Insourcing | Sí, vía Outsourcing formal | No, misma empresa | Mixto]
 43. ¿Realiza auditorías mensuales de cumplimiento de IMSS (SUA vs Nómina)?
 44. ¿Tiene contratos individuales de trabajo con cláusulas de confidencialidad?
 45. ¿Cuenta con reglamentos interiores de trabajo depositados ante la autoridad?
@@ -58,7 +58,7 @@
 47. ¿Tiene implementada la NOM-035 y NOM-037 en sus centros de trabajo?
 48. ¿Cuenta con brigadas de seguridad y protección civil certificadas?
 49. ¿Realiza exámenes médicos periódicos a trabajadores en áreas críticas?
-50. ¿Cómo es su relación sindical? [Sindicatos Nacionales | Sindicato de Empresa | Ambos | Ninguno]
+50. ¿Cómo es su relación sindical? [Sindicatos Nacionales | Sindicato de Empresa | Ambos | Ninguno | Contrato de Protección]
 51. ¿Maneja expedientes laborales completos con huella y firma de los operarios?
 52. ¿Cuenta con seguros de vida y gastos médicos para mandos medios?
 53. ¿Tiene documentadas las políticas de viáticos y herramientas de trabajo?

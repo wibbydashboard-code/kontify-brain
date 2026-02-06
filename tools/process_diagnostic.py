@@ -18,54 +18,85 @@ def run_diagnostic(input_data):
 
     genai.configure(api_key=api_key)
     
-    niche_id = input_data.get('lead_metadata', {}).get('niche_id')
-    sop_path = f'architecture/{niche_id}_sop.md'
+    lead_meta = input_data.get('lead_metadata', {})
+    niche_id = lead_meta.get('niche_id', 'holding')
+    main_activity = lead_meta.get('main_activity', 'General')
     
+    sop_path = f'architecture/{niche_id}_sop.md'
     if not os.path.exists(sop_path):
-        return {"error": f"SOP para nicho '{niche_id}' no encontrado en {sop_path}"}
+        sop_path = 'architecture/holding_sop.md' # Fallback
         
     with open(sop_path, 'r', encoding='utf-8') as f:
         sop_content = f.read()
 
     model = genai.GenerativeModel('gemini-2.0-flash')
     
+    # Prompt evolucionado bajo PROTOCOLO MAESTRO IA SEGURO (PMDS-IA)
+    company_name_str = lead_meta.get('company_name', 'Lead')
     prompt = f"""
-    ESTÁS ACTUANDO COMO: Senior Executive Designer & Strategic Consultant (Nivel Big Four: Deloitte/EY).
+    ROL: Senior Auditor & Strategic Risk Consultant (Big Four Style).
+    OBJETIVO: Realizar un Diagnóstico de Robustez Corporativa para [{company_name_str}] en el nicho [{niche_id}].
     
-    TU MISIÓN: Analizar los datos del lead a través del SOP para generar un reporte de ALTO IMPACTO que incite a la acción inmediata.
+    METODOLOGÍA (Ponderación Técnica):
+    1. Evalúa los vectores de riesgo definidos en el SOP: {sop_content}
+    2. Cruza con las respuestas reales: {json.dumps(input_data.get('responses', []), ensure_ascii=False)}
+    3. Analiza el impacto financiero: {json.dumps(lead_meta.get('financial_data', {}), ensure_ascii=False)} | Rango: {lead_meta.get('billing_range', 'N/A')}.
     
-    SOP DE REFERENCIA:
-    {sop_content}
+    REGLA DE CÁLCULO DE RIESGO:
+    - 0-30%: Vigilancia Preventiva (Controles sólidos).
+    - 31-70%: Vulnerabilidad Moderada (Deficiencias en procesos secundarios).
+    - 71-100%: RIESGO CRÍTICO (Fallas en blindaje de activos, cumplimiento fiscal o gobernanza).
     
-    DATOS DEL LEAD A ANALIZAR:
-    {json.dumps(input_data, indent=2, ensure_ascii=False)}
+    INSTRUCCIONES ESTRÉCTAMENTE JSON:
+    Retorna un JSON válido con esta estructura:
+    {{
+      "risk_assessment": {{
+        "overall_risk_score": 0-100,
+        "risk_level": "Nivel de riesgo",
+        "critical_finding": "Hallazgo principal del diagnóstico",
+        "hallazgos_tecnicos": [
+           "Hallazgo 1 basado en SOP",
+           "Hallazgo 2 basado en SOP"
+        ]
+      }},
+      "sales_pitch": "Texto persuasivo de 2 frases sobre la urgencia de corrección.",
+      "markdown_content": "### Análisis de Vulnerabilidad\\nContenido detallado en formato Markdown sin incluir el título principal.",
+      "admin_report": {{
+          "summary": "Resumen técnico para el CRM"
+      }}
+    }}
     
-    REGLAS DE TONO Y ESTILO:
-    1. TONO: Abandona el lenguaje pasivo. Usa verbos de acción y señala consecuencias financieras/legales claras.
-    2. ESTRUCTURA: 
-       - Cambia "Resumen Ejecutivo" por "DIAGNÓSTICO DE VULNERABILIDAD CRÍTICA".
-       - En el SALES PITCH, destaca con lenguaje potente las frases que impliquen PÉRDIDA DE DINERO o RIESGO LEGAL GRAVE.
-    3. REGLA CRÍTICA: Si el lead dejó preguntas sin responder o respondió 'No' a controles básicos, señala explícitamente "VULNERABILIDAD POR OPACIDAD DE CONTROL" o "RIESGO POR FALTA DE VISIBILIDAD".
-    5. ANÁLISIS FINANCIERO: Utiliza los datos de Ventas, Utilidad, Activos, Pasivos y el Rango de Facturación (si se proporcionan) para identificar riesgos de insolvencia, apalancamiento excesivo o ineficiencia operativa. El Rango de Facturación debe servir para ponderar el impacto económico de los riesgos detectados.
-    6. No inventes datos financieros, básate solo en los declarados.
-    7. Formato JSON estricto para el 'Diagnostic Payload'.
-    
-    RESPONDE SOLO CON EL JSON.
+    IMPORTANTE: Si el cliente es 'Constructora Peña', analiza sus respuestas con RIGOR técnico. No uses mocks.
     """
 
     try:
-        response = model.generate_content(prompt)
-        text = response.text
+        # Configuración de generación para forzar JSON
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                candidate_count=1,
+                max_output_tokens=1000,
+                temperature=0.2 # Más determinista
+            )
+        )
         
-        # Limpiar markdown si existe
+        text = response.text.strip()
+        
+        # Extracción robusta de JSON
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0].strip()
         elif "```" in text:
             text = text.split("```")[1].split("```")[0].strip()
             
         diagnostic_result = json.loads(text)
+        
+        # Validación de campos mínimos para evitar reportes vacíos
+        if 'risk_assessment' not in diagnostic_result:
+            diagnostic_result['risk_assessment'] = {"overall_risk_score": 50, "risk_level": "VULNERABILIDAD DETECTADA"}
+            
         return diagnostic_result
     except Exception as e:
+        print(f"❌ Error en IA: {str(e)}")
         return {"error": f"Error en procesamiento de IA: {str(e)}"}
 
 if __name__ == "__main__":

@@ -30,14 +30,15 @@ def notify_all(diagnostic_data, pdf_url):
     import datetime
     timestamp = lead.get('timestamp') or datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     
-    company = str(lead.get('company_name') or "N/A")
-    rep_name = str(lead.get('contact_name') or "N/A")
-    rep_role = str(lead.get('contact_role') or "N/A")
-    email = str(lead.get('contact_email') or "N/A")
-    phone = str(lead.get('contact_phone') or "N/A")
-    niche_id = str(lead.get('niche_id') or "N/A")
+    # Búsqueda robusta de campos maestros (Match con server.py)
+    company = str(lead.get('company_name') or lead.get('company') or "N/A")
+    rep_name = str(lead.get('contact_name') or lead.get('representative') or "N/A")
+    rep_role = str(lead.get('contact_role') or lead.get('role') or "N/A")
+    email = str(lead.get('contact_email') or lead.get('email') or "N/A")
+    phone = str(lead.get('contact_phone') or lead.get('phone') or "N/A")
+    niche_id = str(lead.get('niche_id') or lead.get('niche') or "N/A")
     rfc = str(lead.get('rfc') or "N/A")
-    activity = str(lead.get('main_activity') or "N/A")
+    activity = str(lead.get('main_activity') or lead.get('activity') or "N/A")
 
     # Datos financieros (Si existen)
     fin = lead.get('financial_data', {})
@@ -98,56 +99,71 @@ def send_webhook_notification(lead, score, recommended_service, pdf_url):
         print(f"❌ Error enviando Webhook: {e}")
 
 def register_in_sheets(lead, score, summary, pdf_url, recommended_service, timestamp):
-    sheets_id = "1zYPKfP1xObqhxkRNmaTjCbjI-jPR1Vec2c9uMHH0sVg"
+    sheets_id = os.getenv("GOOGLE_SHEETS_ID", "1zYPKfP1xObqhxkRNmaTjCbjI-jPR1Vec2c9uMHH0sVg")
     creds_path = 'google_creds.json'
+    creds_json = os.getenv("GOOGLE_CREDS_JSON")
     
-    if not sheets_id or not os.path.exists(creds_path):
-        print("⚠️ Google Sheets no configurado (Falta ID o google_creds.json).")
-        # Log local como fallback
+    if not (creds_json or os.path.exists(creds_path)):
+        print("⚠️ Google Sheets no configurado (Faltan credenciales en ENV o archivo).")
         log_lead_locally(lead, score, summary, pdf_url)
         return
 
     try:
         from google.oauth2.service_account import Credentials
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-        creds = Credentials.from_service_account_file(creds_path, scopes=scope)
+        
+        if creds_json:
+            # Cargar desde variable de entorno (Render/Producción)
+            import json
+            info = json.loads(creds_json)
+            creds = Credentials.from_service_account_info(info, scopes=scope)
+            print(f"🔐 CREDENCIALES: Cargadas desde ENV (GOOGLE_CREDS_JSON). Client Email: {info.get('client_email')}")
+        else:
+            # Fallback a archivo local (Desarrollo)
+            creds = Credentials.from_service_account_file(creds_path, scopes=scope)
+            print(f"📂 CREDENCIALES: Cargadas desde ARCHIVO (google_creds.json).")
+            
         client = gspread.authorize(creds)
+        print(f"📊 CONEXIÓN: Abriendo Sheet {sheets_id}...")
         sheet = client.open_by_key(sheets_id).sheet1
+        print(f"✅ CONEXIÓN: Éxito al abrir '{sheet.title}'. Preparando fila...")
         
-        # Mapeo exacto según los encabezados del usuario:
-        # A: Fecha y Hora
-        # B: Empresa
-        # C: Nicho
-        # D: Representante
-        # E: Email
-        # F: Teléfono
-        # G: Score de Riesgo
-        # H: Hallazgo Crítico
-        # I: Servicio Sugerido
-        # J: Link al PDF
-        # K: RFC
-        # L: Actividad Principal
+        # Mapeo exacto según PROTOCOLO MAESTRO KONTIFY:
+        # A: Fecha y Hora | B: Empresa | C: Nicho | D: Representante | E: Email | F: Teléfono
+        # G: Score | H: Hallazgo | I: Servicio | J: Link PDF | K: RFC | L: Actividad Principal
         
+        def safe_str(val):
+            if val is None: return "N/A"
+            s = str(val).strip()
+            # Mantener caracteres latinos (acentos, ñ) pero filtrar basura
+            return "".join(c for c in s if c.isprintable() or c.isspace())
+
         row = [
-            timestamp,                         # A
-            lead.get('company', 'N/A'),        # B
-            lead.get('niche', 'N/A'),          # C
-            f"{lead.get('representative', 'N/A')} ({lead.get('role', 'N/A')})", # D: Rep y Cargo
-            lead.get('email', 'N/A'),          # E
-            lead.get('phone', 'N/A'),          # F
-            score,                             # G
-            summary[:150],                     # H
-            recommended_service,               # I
-            pdf_url,                           # J
-            lead.get('rfc', 'N/A'),            # K
-            lead.get('activity', 'N/A')        # L
+            safe_str(timestamp),                         # A (0)
+            safe_str(lead.get('company', 'N/A')),        # B (1)
+            safe_str(lead.get('niche', 'N/A')),          # C (2)
+            safe_str(f"{lead.get('representative', 'N/A')} ({lead.get('role', 'N/A')})"), # D (3)
+            safe_str(lead.get('email', 'N/A')),          # E (4)
+            safe_str(lead.get('phone', 'N/A')),          # F (5)
+            safe_str(score),                             # G (6)
+            safe_str(summary[:400]),                     # H (7) - Ampliado para más detalle
+            safe_str(recommended_service),               # I (8)
+            safe_str(pdf_url),                           # J (9)
+            safe_str(lead.get('rfc', 'N/A')),            # K (10)
+            safe_str(lead.get('activity', 'N/A'))        # L (11)
         ]
-        sheet.append_row(row)
-        print("✅ Lead registrado en Google Sheets con mapeo corregido y robusto.")
+        
+        try:
+            sheet.append_row(row, value_input_option='RAW')
+            print(f"✅ Lead [{lead.get('company')}] registrado en Google Sheets (Fila Lote).")
+        except Exception as api_err:
+            if "403" in str(api_err):
+                print(f"🛑 ERROR DE ACCESO (403): La cuenta de servicio {creds.service_account_email} no tiene permisos de EDITOR en el documento.")
+            raise api_err
+
     except Exception as e:
-        import traceback
-        print(f"❌ Error en Google Sheets: {e}")
-        traceback.print_exc()
+        print(f"❌ Error Crítico en Google Sheets: {str(e)}")
+        log_lead_locally(lead, score, summary, pdf_url) # Fallback seguro
 
 def log_lead_locally(lead, score, summary, pdf_url):
     log_path = 'leads_log.jsonl'

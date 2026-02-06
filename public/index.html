@@ -571,29 +571,65 @@
                 optionsContainer.innerHTML = '';
 
                 if (q.options && q.options.length > 0) {
-                    // Diseño adaptativo según número de opciones
-                    optionsContainer.style.gridTemplateColumns = q.options.length > 2 ? '1fr' : '1fr 1fr';
+                    if (q.options.length > 2) {
+                        // REGLA: Opciones > 2 -> Renderizar Dropdown
+                        optionsContainer.style.gridTemplateColumns = '1fr';
+                        const select = document.createElement('select');
+                        select.className = 'option-btn';
+                        select.style.appearance = 'auto';
+                        select.style.textAlign = 'left';
+                        select.style.paddingLeft = '15px';
+                        select.style.cursor = 'pointer';
 
-                    q.options.forEach(opt => {
+                        const defaultOpt = document.createElement('option');
+                        defaultOpt.text = "--- SELECCIONE UNA OPCIÓN ---";
+                        defaultOpt.value = "";
+                        defaultOpt.disabled = true;
+                        defaultOpt.selected = true;
+                        select.appendChild(defaultOpt);
+
+                        q.options.forEach(opt => {
+                            const o = document.createElement('option');
+                            o.value = opt;
+                            o.text = opt.toUpperCase();
+                            select.appendChild(o);
+                        });
+
+                        select.onchange = () => {
+                            if (select.value) {
+                                // Pequeño delay visual
+                                setTimeout(() => answer(select.value), 200);
+                            }
+                        };
+                        optionsContainer.appendChild(select);
+                    } else if (q.options.length === 2) {
+                        // REGLA: Opciones == 2 -> Botones SÍ/NO (o los que vengan)
+                        optionsContainer.style.gridTemplateColumns = '1fr 1fr';
+                        q.options.forEach(opt => {
+                            const btn = document.createElement('button');
+                            btn.className = 'option-btn';
+                            btn.innerText = opt.toUpperCase();
+                            btn.onclick = () => answer(opt);
+                            optionsContainer.appendChild(btn);
+                        });
+                    } else {
+                        // Fallback (1 opción)
                         const btn = document.createElement('button');
                         btn.className = 'option-btn';
-                        btn.innerText = opt.toUpperCase();
-                        btn.onclick = () => answer(opt);
+                        btn.innerText = q.options[0].toUpperCase();
+                        btn.onclick = () => answer(q.options[0]);
                         optionsContainer.appendChild(btn);
-                    });
+                    }
                 } else {
                     // Fallback a SÍ/NO tradicional
                     optionsContainer.style.gridTemplateColumns = '1fr 1fr';
-
                     const btnSi = document.createElement('button');
                     btnSi.className = 'option-btn';
-                    btnSi.id = 'btn-si';
                     btnSi.innerText = 'SÍ';
                     btnSi.onclick = () => answer('Sí');
 
                     const btnNo = document.createElement('button');
                     btnNo.className = 'option-btn';
-                    btnNo.id = 'btn-no';
                     btnNo.innerText = 'NO';
                     btnNo.onclick = () => answer('No');
 
@@ -645,14 +681,13 @@
         async function submitFinal() {
             const loading = document.getElementById('loading');
             const loadingText = document.getElementById('loading-text');
-            loadingText.innerText = "System Pilot analizando 66 vectores de riesgo...";
+            loadingText.innerText = "KONTIFY PILOT: Procesando 66 vectores de riesgo...";
             loading.style.display = 'flex';
 
             const payload = {
                 lead_metadata: window.leadMetadata,
                 responses: responses,
-                timestamp: new Date().toISOString(),
-                source_url: window.location.href
+                timestamp: new Date().toISOString()
             };
 
             try {
@@ -666,21 +701,29 @@
                 loading.style.display = 'none';
 
                 if (result.status === "success") {
-                    localStorage.removeItem('kontify_progress'); // Limpiar al tener éxito
+                    localStorage.removeItem('kontify_progress');
                     document.getElementById('step-2').style.display = 'none';
                     document.getElementById('step-3').style.display = 'block';
 
-                    if (result.report_url) {
-                        const reportLink = result.report_url.startsWith('http') ? result.report_url : `${API_BASE_URL}${result.report_url}`;
-                        const btnHtml = `<a href="${reportLink}" target="_blank" class="btn-next" style="display: block; text-decoration: none; text-align: center;">⬇️ Descargar Reporte de Riesgos (PDF)</a>`;
-                        document.getElementById('btn-report-container').innerHTML = btnHtml;
-                    }
+                    const container = document.getElementById('btn-report-container');
+                    const pdfUrl = result.report_url.startsWith('http') ? result.report_url : `${API_BASE_URL}${result.report_url}`;
+
+                    container.innerHTML = `
+                        <a href="${pdfUrl}" target="_blank" class="btn-next" style="display: block; text-decoration: none; text-align: center; margin-bottom: 20px;">
+                            📥 Descargar Diagnóstico Técnico (PDF)
+                        </a>
+                        <p style="font-size: 12px; color: #444; border: 1px dashed #ccc; padding: 10px; border-radius: 8px;">
+                            <strong>Folio Garantizado:</strong> ${result.requestId}<br>
+                            Los resultados han sido sincronizados con su consultor asignado.
+                        </p>
+                    `;
                 } else {
-                    throw new Error(result.message || "Error desconocido en el servidor");
+                    const errorMsg = result.message || "Error en el motor de análisis.";
+                    alert(`⚠️ AVISO DE SISTEMA:\n${errorMsg}\n\nFolio: ${result.requestId || 'N/A'}\nPor favor, intente de nuevo o contacte a soporte si el problema persiste.`);
                 }
             } catch (e) {
-                alert("Error al procesar el diagnóstico: " + e.message);
                 loading.style.display = 'none';
+                alert("⚠️ FALLO DE CONEXIÓN:\nNo pudimos establecer comunicación con el servidor central. Por favor, verifique su internet e intente enviar sus respuestas de nuevo.");
             }
         }
 
@@ -691,7 +734,13 @@
             saveProgress();
         };
 
-        window.onload = loadProgress;
+        // VERSIÓN: 2.1.1 - BUILD: 20260206_HARD_RESET
+        console.log("🚀 KONTIFY DIAGNOSTIC ENGINE v2.1.1 (HARD-RESET) READY");
+        window.onload = () => {
+            console.log("🛠️ Sincronizando SOPs y Lógica de Dropdowns...");
+            loadProgress();
+            console.log("🛠️ Metadata captured:", window.leadMetadata);
+        };
     </script>
 </body>
 
