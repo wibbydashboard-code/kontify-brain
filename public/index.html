@@ -332,11 +332,28 @@
                     <span style="color: #444;">1 / 3</span>
                 </div>
                 <div class="form-group">
-                    <label>Nombre de la Empresa</label>
-                    <input type="text" id="company_name" placeholder="Ej. Corporativo Industrial S.A.">
+                    <label>Nombre de la Empresa *</label>
+                    <input type="text" id="company_name" placeholder="Ej. Empresa de Construcción Peña">
                 </div>
                 <div class="form-group">
-                    <label>Sector de la Industria (Nicho)</label>
+                    <label>Rango de Facturación Anual (MXN) *</label>
+                    <select id="billing_range">
+                        <option value="< 10M">Menos de $10M</option>
+                        <option value="10M - 50M">$10M - $50M</option>
+                        <option value="50M - 100M">$50M - $100M</option>
+                        <option value="+100M">Más de $100M</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Principales Activos Fijos (Maquinaria, Inmuebles, Flotas)</label>
+                    <input type="text" id="fixed_assets" placeholder="Ej. 5 Tractocamiones, 1 Bodega">
+                </div>
+                <div class="form-group">
+                    <label>Actividad Principal / Giro</label>
+                    <input type="text" id="business_activity" placeholder="Ej. Transporte de Carga Federal">
+                </div>
+                <div class="form-group">
+                    <label>Sector / Nicho *</label>
                     <select id="niche_id">
                         <option value="holding">Holding / Grupo Familiar</option>
                         <option value="constructora">Constructora e Inmobiliaria</option>
@@ -346,20 +363,16 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>RFC (Opcional)</label>
-                    <input type="text" id="rfc" placeholder="Ej. ABC123456XYZ">
-                </div>
-                <div class="form-group">
-                    <label>Actividad Principal / Giro</label>
-                    <input type="text" id="business_activity" placeholder="Ej. Comercialización de acero">
-                </div>
-                <div class="form-group">
-                    <label>Su Nombre Completo</label>
+                    <label>Su Nombre Completo *</label>
                     <input type="text" id="contact_name" placeholder="Ej. Juan Pérez">
                 </div>
                 <div class="form-group">
-                    <label>Correo Electrónico Corporativo</label>
+                    <label>Correo Electrónico Corporativo *</label>
                     <input type="email" id="contact_email" placeholder="ejemplo@empresa.com">
+                </div>
+                <div class="form-group">
+                    <label>RFC (Opcional)</label>
+                    <input type="text" id="rfc" placeholder="Ej. ABC123456XYZ">
                 </div>
 
                 <div
@@ -454,26 +467,32 @@
             const contact_name = document.getElementById('contact_name').value;
             const contact_email = document.getElementById('contact_email').value;
             const niche = document.getElementById('niche_id').value;
-
-            // Nuevos Campos
+            const billing_range = document.getElementById('billing_range').value;
+            const fixed_assets = document.getElementById('fixed_assets').value;
             const rfc = document.getElementById('rfc').value;
             const activity = document.getElementById('business_activity').value;
-            const financial_data = {
-                sales: document.getElementById('sales_annual').value,
-                profit: document.getElementById('net_profit').value,
-                assets: document.getElementById('total_assets').value,
-                liabilities: document.getElementById('total_liabilities').value
-            };
 
             if (!company_name || !contact_name || !contact_email) {
-                alert("Por favor complete todos los campos obligatorios.");
+                alert("Por favor complete todos los campos obligatorios (*).");
                 return;
             }
 
             // Guardar metadatos extendidos globalmente
             window.leadMetadata = {
-                company_name, contact_name, contact_email, niche_id: niche,
-                rfc, activity, financial_data
+                company_name,
+                contact_name,
+                contact_email,
+                niche_id: niche,
+                billing_range,
+                fixed_assets,
+                rfc,
+                activity,
+                financial_data: {
+                    sales: document.getElementById('sales_annual').value,
+                    profit: document.getElementById('net_profit').value,
+                    assets: document.getElementById('total_assets').value,
+                    liabilities: document.getElementById('total_liabilities').value
+                }
             };
 
             // Mostrar Loading

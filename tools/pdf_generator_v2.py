@@ -92,6 +92,26 @@ class DiagnosticPDF(FPDF):
         self.set_font('helvetica', 'B', 14)
         self.cell(40, 10, f"{score}%", 0, 0, 'C')
 
+def safe_text(txt):
+    """Limpia texto para evitar errores de codificación en FPDF (latin-1)"""
+    if not txt: return ""
+    # Reemplazos comunes de Unicode que no están en latin-1
+    replacements = {
+        '\u2013': '-', # en dash
+        '\u2014': '-', # em dash
+        '\u2018': "'", # left single quote
+        '\u2019': "'", # right single quote
+        '\u201c': '"', # left double quote
+        '\u201d': '"', # right double quote
+        '\u2022': '•', # bullet
+        '\u2026': '...', # ellipsis
+    }
+    for k, v in replacements.items():
+        txt = txt.replace(k, v)
+    
+    # Forzar a latin-1 ignorando lo que no sea compatible
+    return txt.encode('latin-1', 'replace').decode('latin-1')
+
 def generate_pdf_final(json_data, output_path):
     pdf = DiagnosticPDF()
     pdf.alias_nb_pages()
@@ -108,11 +128,11 @@ def generate_pdf_final(json_data, output_path):
     pdf.set_xy(15, 40)
     pdf.set_text_color(*pdf.primary_color)
     pdf.set_font('helvetica', 'B', 24)
-    pdf.cell(0, 12, "DIAGNÓSTICO ESTRATÉGICO", 0, 1)
+    pdf.cell(0, 12, safe_text("DIAGNÓSTICO ESTRATÉGICO"), 0, 1)
     
     pdf.set_text_color(*pdf.dark_color)
     pdf.set_font('helvetica', 'B', 12)
-    pdf.cell(0, 8, f"CLIENTE: {lead_meta.get('company_name', 'Lead Assessment').upper()}", 0, 1)
+    pdf.cell(0, 8, safe_text(f"CLIENTE: {lead_meta.get('company_name', 'Lead Assessment').upper()}"), 0, 1)
     pdf.ln(2)
     
     # Gauge Score
@@ -122,7 +142,7 @@ def generate_pdf_final(json_data, output_path):
     pdf.set_xy(15, 75)
     pdf.set_font('helvetica', 'B', 10)
     status_text = "RIESGO CRÍTICO" if score > 70 else "VULNERABILIDAD MODERADA" if score > 30 else "VIGILANCIA PREVENTIVA"
-    pdf.cell(100, 5, f"ESTADO DE SALUD CORPORATIVA: {status_text}", 0, 1)
+    pdf.cell(100, 5, safe_text(f"ESTADO DE SALUD CORPORATIVA: {status_text}"), 0, 1)
     
     pdf.ln(15)
 
@@ -135,26 +155,29 @@ def generate_pdf_final(json_data, output_path):
         pdf.set_font('helvetica', 'B', 8)
         pdf.set_text_color(100, 100, 100)
         pdf.set_xy(20, pdf.get_y() + 2)
-        pdf.cell(40, 5, "RFC / TAX ID", 0, 0)
-        pdf.cell(45, 5, "VENTAS ANUALES", 0, 0)
-        pdf.cell(45, 5, "UTILIDAD NETA", 0, 0)
-        pdf.cell(45, 5, "PATRIMONIO ESTIMADO", 0, 1)
+        pdf.cell(40, 5, safe_text("RFC / TAX ID"), 0, 0)
+        pdf.cell(45, 5, safe_text("VENTAS (RANGO)"), 0, 0)
+        pdf.cell(45, 5, safe_text("UTILIDAD NETA"), 0, 0)
+        pdf.cell(45, 5, safe_text("PATRIMONIO ESTIMADO"), 0, 1)
         
         pdf.set_font('helvetica', 'B', 10)
         pdf.set_text_color(0, 0, 0)
         pdf.set_x(20)
-        pdf.cell(40, 5, str(lead_meta.get('rfc', 'N/A')).upper(), 0, 0)
-        pdf.cell(45, 5, f"$ {fin.get('sales', '0')}", 0, 0)
-        pdf.cell(45, 5, f"$ {fin.get('profit', '0')}", 0, 0)
+        pdf.cell(40, 5, safe_text(str(lead_meta.get('rfc', 'N/A')).upper()), 0, 0)
+        
+        # Usar el rango de facturación si existe
+        sales_val = lead_meta.get('billing_range', fin.get('sales', 'N/A'))
+        pdf.cell(45, 5, safe_text(f"$ {sales_val}"), 0, 0)
+        pdf.cell(45, 5, safe_text(f"$ {fin.get('profit', '0')}"), 0, 0)
         
         try:
             # Limpiar strings de comas antes de convertir
-            a = float(str(fin.get('assets', 0)).replace(',', ''))
-            p = float(str(fin.get('liabilities', 0)).replace(',', ''))
+            a = float(str(fin.get('assets', 0)).replace(',', '').replace('$', ''))
+            p = float(str(fin.get('liabilities', 0)).replace(',', '').replace('$', ''))
             ap_str = f"$ {a - p:,.0f}"
         except:
             ap_str = "N/A"
-        pdf.cell(45, 5, ap_str, 0, 1)
+        pdf.cell(45, 5, safe_text(ap_str), 0, 1)
         pdf.ln(10)
 
     # --- PITCH SECTION (Strategic Recommendation) ---
@@ -167,12 +190,11 @@ def generate_pdf_final(json_data, output_path):
     
     pdf.set_font('helvetica', 'B', 12)
     pdf.set_text_color(*pdf.primary_color)
-    pdf.cell(0, 10, "ESTRATEGIA RECOMENDADA (PITCH)", 0, 1)
+    pdf.cell(0, 10, safe_text("ESTRATEGIA RECOMENDADA (PITCH)"), 0, 1)
     
-    # Reemplazar frases clave con negritas (simulado en PDF multi_cell no es fácil, usaremos estilo Italic para destacar)
     pdf.set_font('helvetica', 'I', 11)
     pdf.set_text_color(50, 50, 50)
-    pdf.multi_cell(0, 6, f'"{pitch}"', 1, 'L')
+    pdf.multi_cell(0, 6, safe_text(f'"{pitch}"'), 1, 'L')
     pdf.ln(10)
 
     # --- BOMB SECTION (Hallazgos Críticos) ---
@@ -182,19 +204,18 @@ def generate_pdf_final(json_data, output_path):
     
     pdf.set_font('helvetica', 'B', 12)
     pdf.set_text_color(*pdf.danger_color)
-    pdf.cell(0, 10, "⚠️ HALLAZGOS DE VULNERABILIDAD CRÍTICA", 0, 1)
+    pdf.cell(0, 10, safe_text("⚠️ HALLAZGOS DE VULNERABILIDAD CRÍTICA"), 0, 1)
     
     pdf.set_font('helvetica', '', 10)
     pdf.set_text_color(30, 30, 30)
     
     content = data.get('markdown_content', '')
-    # Filtrar solo hallazgos de alto impacto para esta sección si es posible, o limpiar el markdown
     processed_content = content.replace('**', '').replace('#', '').replace('*', '•')
     
-    pdf.multi_cell(0, 5.5, processed_content, 1, 'L', fill=True)
+    pdf.multi_cell(0, 5.5, safe_text(processed_content), 1, 'L', fill=True)
     
     pdf.output(output_path)
-    print(f"✅ PDF Executivo Big Four generado en: {output_path}")
+    print(f"✅ PDF Executivo Big Four generado exitosamente en: {output_path}")
 
 if __name__ == "__main__":
     import sys

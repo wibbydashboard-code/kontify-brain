@@ -2,6 +2,13 @@
 **Nicho:** Holding / Grupo de Empresas
 **Objetivo:** Identificar vulnerabilidades en gobernanza, sucesión y blindaje patrimonial.
 
+## 📋 Fase 1: Información Base (Mandatorio)
+El Agente debe validar y utilizar los siguientes datos para contextualizar el diagnóstico:
+- **Nombre de la Empresa:** Identidad jurídica.
+- **Giro Principal:** Actividad operativa.
+- **Rango de Facturación Anual:** Factor de ponderación de riesgo económico.
+- **Activos Fijos Principales:** Base de garantía y estructura patrimonial.
+
 ## 🧠 Lógica de Razonamiento (Navigation Layer)
 El Agente debe priorizar la detección de "Riesgos de Continuidad". Una Holding sin protocolo familiar es una estructura frágil.
 

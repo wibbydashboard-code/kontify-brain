@@ -5,6 +5,13 @@
 ## 1. Objetivo
 Analizar de forma determinista las respuestas de un lead del sector autotransporte para identificar riesgos fiscales (Carta Porte, Coordinados) y patrimoniales (Blindaje de Flota).
 
+## 📋 Fase 1: Información Base (Mandatorio)
+El Agente debe utilizar estos datos para el análisis de escala y riesgo:
+- **Nombre de la Empresa:** Identidad jurídica.
+- **Giro Principal:** Tipo de carga/transporte.
+- **Rango de Facturación Anual:** Factor de ponderación.
+- **Activos Fijos Principales:** Flota y centros de distribución.
+
 ## 2. Entradas (Input)
 - `niche_id`: "autotransporte"
 - `responses`: Arreglo de preguntas (1-66).

@@ -46,7 +46,7 @@ def run_diagnostic(input_data):
        - Cambia "Resumen Ejecutivo" por "DIAGNÓSTICO DE VULNERABILIDAD CRÍTICA".
        - En el SALES PITCH, destaca con lenguaje potente las frases que impliquen PÉRDIDA DE DINERO o RIESGO LEGAL GRAVE.
     3. REGLA CRÍTICA: Si el lead dejó preguntas sin responder o respondió 'No' a controles básicos, señala explícitamente "VULNERABILIDAD POR OPACIDAD DE CONTROL" o "RIESGO POR FALTA DE VISIBILIDAD".
-    5. ANÁLISIS FINANCIERO: Utiliza los datos de Ventas, Utilidad, Activos y Pasivos (si se proporcionan) para identificar riesgos de insolvencia, apalancamiento excesivo o ineficiencia operativa. Integra estos datos en el diagnóstico para dar peso técnico de alto nivel.
+    5. ANÁLISIS FINANCIERO: Utiliza los datos de Ventas, Utilidad, Activos, Pasivos y el Rango de Facturación (si se proporcionan) para identificar riesgos de insolvencia, apalancamiento excesivo o ineficiencia operativa. El Rango de Facturación debe servir para ponderar el impacto económico de los riesgos detectados.
     6. No inventes datos financieros, básate solo en los declarados.
     7. Formato JSON estricto para el 'Diagnostic Payload'.
     
