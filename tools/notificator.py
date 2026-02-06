@@ -69,10 +69,12 @@ def notify_all(diagnostic_data, pdf_url):
         "role": rep_role,
         "email": email,
         "phone": phone,
-        "rfc": rfc,
-        "activity": activity,
+        "rfc": rfc,       # Columna K
+        "activity": activity, # Columna L
         "billing": billing
     }
+    
+    print(f"📊 Orquestando registro en Sheets para: {company} | RFC: {rfc}")
     register_in_sheets(lead_data, score, summary, pdf_url, recommended_service, timestamp)
     
     # 3. Email de Cortesía
