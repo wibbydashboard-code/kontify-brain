@@ -43,6 +43,13 @@ def submit_quiz():
         # 1. Procesar Diagnóstico con IA
         diagnostic_result = run_diagnostic(data)
         
+        # ASEGURAR METADATOS: Fusionar metadata original si la IA la omitió
+        if 'lead_metadata' not in diagnostic_result:
+            diagnostic_result['lead_metadata'] = data.get('lead_metadata', {})
+        else:
+            # Si existe, nos aseguramos de que tenga los datos financieros originales
+            diagnostic_result['lead_metadata'].update(data.get('lead_metadata', {}))
+        
         # 2. Generar PDF
         pdf_filename = f"KONTIFY_Report_{company_name}_{uuid.uuid4().hex[:6]}.pdf"
         pdf_path = os.path.join(REPORTS_DIR, pdf_filename)
