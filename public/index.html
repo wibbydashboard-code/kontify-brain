@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kontify - Mentores Estratégicos | Diagnóstico Corporativo</title>
+
+    <!-- PWA & SEO -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#007BFF">
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --verde-neon: #C1FF72;
+            --azul-electrico: #007BFF;
+            --negro: #000000;
+            --blanco: #FFFFFF;
+            --gris: #1A1A1A;
+            --gris-claro: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--negro);
+            color: var(--blanco);
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        header {
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            border-bottom: 1px solid #222;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-k {
+            width: 32px;
+            height: 32px;
+            background: var(--verde-neon);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .logo-slogan {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #888;
+            display: block;
+            margin-top: -5px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 120px 20px 60px;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 span {
+            color: var(--azul-electrico);
+        }
+
+        .hero p {
+            color: #888;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .quiz-card {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 123, 255, 0.05);
+            position: relative;
+        }
+
+        .step-info {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .step-label {
+            color: var(--verde-neon);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: #222;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--azul-electrico), var(--verde-neon));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        select {
+            width: 100%;
+            padding: 15px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--azul-electrico);
+            outline: none;
+        }
+
+        .question-box {
+            margin-top: 10px;
+            animation: fadeIn 0.4s ease;
+            transition: opacity 0.2s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .option-btn {
+            padding: 25px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 12px;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 18px;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--verde-neon);
+            background: #1a1a1a;
+            transform: scale(1.02);
+        }
+
+        .option-btn:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        .btn-next {
+            width: 100%;
+            padding: 18px;
+            background: var(--azul-electrico);
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 40px;
+            transition: all 0.2s;
+        }
+
+        .btn-next:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 123, 255, 0.3);
+            filter: brightness(1.1);
+        }
+
+        footer {
+            padding: 60px 5%;
+            background: #050505;
+            border-top: 1px solid #111;
+            font-size: 12px;
+            color: #555;
+            text-align: center;
+        }
+
+        .legal-box {
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        #loading {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(193, 255, 114, 0.1);
+            border-top-color: var(--verde-neon);
+            border-radius: 50%;
+            animation: spin 0.8s infinite linear;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .fade-out {
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading">
+        <div class="spinner"></div>
+        <p id="loading-text" style="color: var(--verde-neon); font-weight: 600; font-size: 18px;">Cargando cuestionario
+            técnico...</p>
+    </div>
+
+    <header>
+        <div class="logo-container">
+            <div class="logo-k">K</div>
+            <div>
+                <div class="logo-text">Kontify</div>
+                <div class="logo-slogan">Mentores Estratégicos</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="hero">
+            <h1>Diagnóstico de <span>Blindaje Corporativo</span></h1>
+            <p>Acceda a su reporte de riesgos y oportunidades diseñado por consultores senior e inteligencia artificial.
+            </p>
+        </div>
+
+        <div class="quiz-card" id="quiz-container">
+            <!-- Step 1: Info Base -->
+            <div id="step-1">
+                <div class="step-info">
+                    <span class="step-label">Fase 1: Información Base</span>
+                    <span style="color: #444;">1 / 3</span>
+                </div>
+                <div class="form-group">
+                    <label>Nombre de la Empresa</label>
+                    <input type="text" id="company_name" placeholder="Ej. Corporativo Industrial S.A.">
+                </div>
+                <div class="form-group">
+                    <label>Sector de la Industria (Nicho)</label>
+                    <select id="niche_id">
+                        <option value="holding">Holding / Grupo Familiar</option>
+                        <option value="constructora">Constructora e Inmobiliaria</option>
+                        <option value="autotransporte">Autotransporte de Carga</option>
+                        <option value="comercializadora">Comercializadora e Importación</option>
+                        <option value="manufactura">Industria de la Transformación</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Su Nombre Completo</label>
+                    <input type="text" id="contact_name" placeholder="Ej. Juan Pérez">
+                </div>
+                <div class="form-group">
+                    <label>Correo Electrónico Corporativo</label>
+                    <input type="email" id="contact_email" placeholder="ejemplo@empresa.com">
+                </div>
+                <button class="btn-next" onclick="startQuiz()">Comenzar Diagnóstico Técnico</button>
+            </div>
+
+            <!-- Step 2: Quiz Dinámico -->
+            <div id="step-2" style="display: none;">
+                <div class="step-info">
+                    <span class="step-label" id="category-label">Categoría</span>
+                    <span style="color: #444;" id="progress-text">0 / 66</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-bar-fill"></div>
+                </div>
+                <div class="question-box" id="q-box">
+                    <h2 id="current-question"
+                        style="font-size: 22px; font-weight: 600; min-height: 100px; line-height: 1.4;">Cargando...</h2>
+                    <div class="options">
+                        <button class="option-btn" id="btn-si" onclick="answer('Sí')">SÍ</button>
+                        <button class="option-btn" id="btn-no" onclick="answer('No')">NO</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Éxito -->
+            <div id="step-3" style="display: none; text-align: center; padding: 40px 0;">
+                <div
+                    style="width: 80px; height: 80px; background: var(--verde-neon); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 30px; box-shadow: 0 0 20px rgba(193,255,114,0.4);">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <h1 style="font-size: 32px; margin-bottom: 20px;">¡Análisis Completo!</h1>
+                <p style="color: #888; margin-bottom: 30px; font-size: 18px;">Su diagnóstico ha sido procesado. Los
+                    resultados han sido enviados a su CRM y el reporte PDF está listo.</p>
+                <div id="btn-report-container"></div>
+                <a href="/" class="btn-next"
+                    style="display: inline-block; background: transparent; border: 2px solid #333; margin-top: 15px; text-decoration: none;">Realizar
+                    otro diagnóstico</a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="legal-box">
+            <p
+                style="margin-bottom: 20px; color: #888; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">
+                Aviso Legal Kontify - Mentores Estratégicos</p>
+            <p><strong>Privacidad:</strong> Kontify trata sus datos con estricta confidencialidad bajo la LFPDPPP. La
+                información es utilizada únicamente para el análisis estratégico solicitado.</p>
+            <p style="margin-top: 30px; border-top: 1px solid #111; padding-top: 20px; color: #333;">&copy; 2026 Kontify
+                | Consultoría Estratégica con Inteligencia Artificial</p>
+        </div>
+    </footer>
+
+    <script>
+        // CONFIGURACIÓN DEL MOTOR (Brain)
+        // Cambia esto a la URL de Render/Vercel cuando esté desplegado
+        const API_BASE_URL = window.location.hostname === 'localhost' ? '' : 'https://kontify-brain.onrender.com';
+
+        let currentStep = 0;
+        let responses = [];
+        let questions = [];
+
+        async function startQuiz() {
+            const company_name = document.getElementById('company_name').value;
+            const contact_name = document.getElementById('contact_name').value;
+            const contact_email = document.getElementById('contact_email').value;
+            const niche = document.getElementById('niche_id').value;
+
+            if (!company_name || !contact_name || !contact_email) {
+                alert("Por favor complete todos los campos obligatorios.");
+                return;
+            }
+
+            // Mostrar Loading
+            const loading = document.getElementById('loading');
+            const loadingText = document.getElementById('loading-text');
+            loadingText.innerText = "Cargando cuestionario técnico para " + niche.toUpperCase() + "...";
+            loading.style.display = 'flex';
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/questions/${niche}`);
+                questions = await res.json();
+
+                if (questions.error) throw new Error(questions.error);
+
+                loading.style.display = 'none';
+                document.getElementById('step-1').style.display = 'none';
+                document.getElementById('step-2').style.display = 'block';
+                showQuestion();
+            } catch (e) {
+                alert("Error al conectar con el servidor: " + e.message);
+                loading.style.display = 'none';
+            }
+        }
+
+        function showQuestion() {
+            if (currentStep >= questions.length) {
+                submitFinal();
+                return;
+            }
+
+            const qBox = document.getElementById('q-box');
+            qBox.classList.add('fade-out');
+
+            setTimeout(() => {
+                const q = questions[currentStep];
+                document.getElementById('current-question').innerText = q.q;
+                document.getElementById('category-label').innerText = "Categoría: " + q.cat;
+                document.getElementById('progress-text').innerText = (currentStep + 1) + " / " + questions.length;
+
+                const progress = ((currentStep + 1) / questions.length) * 100;
+                document.getElementById('progress-bar-fill').style.width = progress + '%';
+
+                qBox.classList.remove('fade-out');
+
+                // Reactivar botones
+                document.getElementById('btn-si').disabled = false;
+                document.getElementById('btn-no').disabled = false;
+            }, 250);
+        }
+
+        function answer(val) {
+            // Bloqueo para evitar doble clic
+            document.getElementById('btn-si').disabled = true;
+            document.getElementById('btn-no').disabled = true;
+
+            const q = questions[currentStep];
+            responses.push({
+                q_index: currentStep + 1,
+                category_id: q.cat,
+                question: q.q,
+                answer: val
+            });
+
+            currentStep++;
+            showQuestion();
+        }
+
+        async function submitFinal() {
+            const loading = document.getElementById('loading');
+            const loadingText = document.getElementById('loading-text');
+            loadingText.innerText = "System Pilot analizando 66 vectores de riesgo...";
+            loading.style.display = 'flex';
+
+            const payload = {
+                lead_metadata: {
+                    company_name: document.getElementById('company_name').value,
+                    niche_id: document.getElementById('niche_id').value,
+                    contact_name: document.getElementById('contact_name').value,
+                    contact_email: document.getElementById('contact_email').value,
+                    timestamp: new Date().toISOString(),
+                    source_url: window.location.href
+                },
+                responses: responses
+            };
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await res.json();
+                loading.style.display = 'none';
+
+                if (result.status === "success") {
+                    document.getElementById('step-2').style.display = 'none';
+                    document.getElementById('step-3').style.display = 'block';
+
+                    if (result.report_url) {
+                        const reportLink = result.report_url.startsWith('http') ? result.report_url : `${API_BASE_URL}${result.report_url}`;
+                        const btnHtml = `<a href="${reportLink}" target="_blank" class="btn-next" style="display: block; text-decoration: none; text-align: center;">⬇️ Descargar Reporte de Riesgos (PDF)</a>`;
+                        document.getElementById('btn-report-container').innerHTML = btnHtml;
+                    }
+                } else {
+                    throw new Error(result.message || "Error desconocido en el servidor");
+                }
+            } catch (e) {
+                alert("Error al procesar el diagnóstico: " + e.message);
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+
+</html>

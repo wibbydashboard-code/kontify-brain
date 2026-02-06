@@ -1,0 +1,9 @@
+flask
+flask-cors
+google-generativeai
+python-dotenv
+fpdf
+gspread
+google-auth
+requests
+gunicorn

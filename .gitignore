@@ -1,0 +1,8 @@
+.env
+google_creds.json
+.tmp/
+__pycache__/
+*.pdf
+leads_log.jsonl
+notif_error.txt
+full_error.txt
