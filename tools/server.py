@@ -5,25 +5,28 @@ import json
 import uuid
 import sys
 
-# Configuración de orígenes permitidos (CORS)
+# Configuración de la Aplicación
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}}) 
+# Configuración de orígenes permitidos (CORS) para producción
+CORS(app, resources={r"/*": {"origins": "*"}}) 
 
-# Agregar el directorio actual al path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Agregar el directorio /tools al path para importaciones internas
+tools_dir = os.path.dirname(os.path.abspath(__file__))
+if tools_dir not in sys.path:
+    sys.path.append(tools_dir)
 
 from process_diagnostic import run_diagnostic
 from pdf_generator_v2 import generate_pdf_final
 from notificator import notify_all
 
-# Configuración de la Aplicación
-app = Flask(__name__)
-CORS(app) 
-
 # Asegurar que las carpetas existan
 os.makedirs('.tmp', exist_ok=True)
 REPORTS_DIR = os.path.join(os.getcwd(), 'reports')
 os.makedirs(REPORTS_DIR, exist_ok=True)
+
+@app.route('/health')
+def health():
+    return jsonify({"status": "ok", "service": "kontify-brain"}), 200
 
 @app.route('/')
 def serve_index():
