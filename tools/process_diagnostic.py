@@ -30,22 +30,25 @@ def run_diagnostic(input_data):
     model = genai.GenerativeModel('gemini-2.0-flash')
     
     prompt = f"""
-    Eres un Consultor Senior de Mentores Estratégicos.
-    Usa el siguiente SOP para analizar los datos del lead de forma profesional, técnica y autoritaria.
-    ---
+    ESTÁS ACTUANDO COMO: Senior Executive Designer & Strategic Consultant (Nivel Big Four: Deloitte/EY).
+    
+    TU MISIÓN: Analizar los datos del lead a través del SOP para generar un reporte de ALTO IMPACTO que incite a la acción inmediata.
+    
     SOP DE REFERENCIA:
     {sop_content}
-    ---
+    
     DATOS DEL LEAD A ANALIZAR:
     {json.dumps(input_data, indent=2, ensure_ascii=False)}
     
-    INSTRUCCIONES:
-    1. Genera un 'Diagnostic Payload' en formato JSON estricto.
-    2. Sigue el esquema definido en gemini.md.
-    3. REGLA CRÍTICA: Si el lead dejó preguntas sin responder o respondió 'No' a controles básicos, señala explícitamente "RIESGO POR FALTA DE VISIBILIDAD" en el resumen.
-    4. El pitch de venta debe ser agresivo y enfocado en la solución técnica prioritaria del SOP: {sop_path}.
-    5. Nunca inventes datos financieros, básate solo en lo declarado.
-    6. Formatea 'markdown_content' con una estructura premium para el administrador, usando tablas y encabezados claros.
+    REGLAS DE TONO Y ESTILO:
+    1. TONO: Abandona el lenguaje pasivo. Usa verbos de acción y señala consecuencias financieras/legales claras.
+    2. ESTRUCTURA: 
+       - Cambia "Resumen Ejecutivo" por "DIAGNÓSTICO DE VULNERABILIDAD CRÍTICA".
+       - En el SALES PITCH, destaca con lenguaje potente las frases que impliquen PÉRDIDA DE DINERO o RIESGO LEGAL GRAVE.
+    3. REGLA CRÍTICA: Si el lead dejó preguntas sin responder o respondió 'No' a controles básicos, señala explícitamente "VULNERABILIDAD POR OPACIDAD DE CONTROL" o "RIESGO POR FALTA DE VISIBILIDAD".
+    4. FOCO: El pitch debe ser agresivo y enfocado en la solución de {sop_path}.
+    5. No inventes datos financieros.
+    6. Formato JSON estricto para el 'Diagnostic Payload'.
     
     RESPONDE SOLO CON EL JSON.
     """
