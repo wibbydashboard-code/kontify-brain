@@ -15,61 +15,49 @@ load_dotenv()
 def notify_all(diagnostic_data, pdf_url):
     """Orquestador de notificaciones y registro de leads"""
     
-    # Intentar extraer desde diferentes estructuras posibles
+    # Prioridad absoluta a lead_metadata en la raíz (Datos reales del formulario)
+    lead = diagnostic_data.get('lead_metadata', {})
+    
+    # Report / Risk Data (Datos generados por IA)
     payload = diagnostic_data.get('diagnostic_payload', {})
+    if not payload: payload = diagnostic_data # Soporte si no hay anidación
     
-    # Lead Metadata
-    lead = payload.get('lead_metadata', {})
-    if not lead:
-        # Fallback si la IA lo puso dentro de 'lead_assessment'
-        lead = payload.get('lead_assessment', {})
-    if not lead:
-        lead = diagnostic_data.get('lead_metadata', {})
-
-    # Report / Risk Data
     report = payload.get('risk_assessment', {})
-    if not report:
-        # Fallback si la IA usó 'lead_assessment' como contenedor de riesgo
-        report = payload.get('lead_assessment', {})
-    if not report:
-        report = diagnostic_data.get('admin_report', {})
+    if not report: report = payload.get('lead_assessment', {})
+    if not report: report = diagnostic_data.get('admin_report', {})
 
-    # Campos específicos
+    # Campos específicos con fallbacks deterministas
     import datetime
-    timestamp = lead.get('timestamp') or lead.get('fecha') or lead.get('date')
-    if not timestamp:
-        timestamp = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    timestamp = lead.get('timestamp') or datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     
-    # Búsqueda robusta de metadatos (IA puede variar nombres de llaves)
-    company = str(lead.get('company_name') or lead.get('company') or report.get('company_name') or "N/A")
-    rep_name = str(lead.get('contact_name') or lead.get('representative') or lead.get('name') or report.get('contact_name') or "N/A")
-    rep_role = str(lead.get('contact_role') or lead.get('role') or "N/A")
-    email = str(lead.get('contact_email') or lead.get('email') or report.get('contact_email') or report.get('email') or "N/A")
-    phone = str(lead.get('contact_phone') or lead.get('phone') or "N/A")
-    niche_id = str(lead.get('niche_id') or lead.get('industry') or "N/A")
+    company = str(lead.get('company_name') or "N/A")
+    rep_name = str(lead.get('contact_name') or "N/A")
+    rep_role = str(lead.get('contact_role') or "N/A")
+    email = str(lead.get('contact_email') or "N/A")
+    phone = str(lead.get('contact_phone') or "N/A")
+    niche_id = str(lead.get('niche_id') or "N/A")
     rfc = str(lead.get('rfc') or "N/A")
-    activity = str(lead.get('main_activity') or lead.get('activity') or "N/A")
+    activity = str(lead.get('main_activity') or "N/A")
+
+    # Datos financieros (Si existen)
+    fin = lead.get('financial_data', {})
+    billing = lead.get('billing_range') or fin.get('sales', 'N/A')
 
     score = report.get('overall_risk_score', report.get('risk_score', 'N/A'))
     summary = report.get('summary', report.get('risk_level', report.get('recommendation', 'N/A')))
+    
     if isinstance(summary, dict):
         summary = json.dumps(summary, ensure_ascii=False)
     else:
         summary = str(summary)
     
-    pitch = payload.get('sales_pitch', '')
-    if not pitch:
-        pitch = report.get('pitch', '')
-    if isinstance(pitch, dict):
-        pitch = pitch.get('urgent_recommendation', 'N/A')
+    recommended_service = "Específico por Nicho"
+    try:
+        if score != 'N/A' and float(score) > 70:
+            recommended_service = "Blindaje Gold / PropCo"
+    except: pass
     
-    pitch = str(pitch)
-    
-    recommended_service = "Específico por Nicho" # Fallback
-    if score != 'N/A' and str(score).isdigit() and int(score) > 70:
-        recommended_service = "Blindaje Gold / PropCo"
-    
-    # 1. Notificación Slack/WebHook
+    # 1. Notificación Slack
     send_webhook_notification(lead, score, recommended_service, pdf_url)
     
     # 2. Registro en Google Sheets
@@ -81,11 +69,12 @@ def notify_all(diagnostic_data, pdf_url):
         "email": email,
         "phone": phone,
         "rfc": rfc,
-        "activity": activity
+        "activity": activity,
+        "billing": billing
     }
     register_in_sheets(lead_data, score, summary, pdf_url, recommended_service, timestamp)
     
-    # 3. Email de Cortesía (Vía SendGrid)
+    # 3. Email de Cortesía
     send_courtesy_email(lead, pdf_url)
 
 def send_webhook_notification(lead, score, recommended_service, pdf_url):
