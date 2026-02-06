@@ -27,19 +27,19 @@ class DiagnosticPDF(FPDF):
         self.set_text_color(255, 255, 255)
         self.set_font('helvetica', 'B', 16)
         self.set_xy(23, 10)
-        self.cell(40, 6, 'KONTIFY', 0, 0, 'L')
+        self.cell(40, 6, safe_text('KONTIFY'), 0, 0, 'L')
         
         self.set_font('helvetica', '', 7)
         self.set_xy(23, 15)
-        self.cell(40, 5, 'STRATEGIC CONSULTING GROUP', 0, 0, 'L')
+        self.cell(40, 5, safe_text('STRATEGIC CONSULTING GROUP'), 0, 0, 'L')
 
         # Folio y Fecha (Elegante a la derecha)
         self.set_text_color(180, 180, 180)
         self.set_font('helvetica', 'B', 8)
         self.set_xy(140, 10)
-        self.cell(55, 5, f"REF NO: {self.folio}", 0, 1, 'R')
+        self.cell(55, 5, safe_text(f"REF NO: {self.folio}"), 0, 1, 'R')
         self.set_xy(140, 15)
-        self.cell(55, 5, f"DATE: {datetime.date.today().strftime('%d / %m / %Y')}", 0, 1, 'R')
+        self.cell(55, 5, safe_text(f"DATE: {datetime.date.today().strftime('%d / %m / %Y')}"), 0, 1, 'R')
         self.ln(25)
 
     def footer(self):
@@ -53,10 +53,16 @@ class DiagnosticPDF(FPDF):
         
         # Aviso de Privacidad elegante
         self.set_y(-15)
-        self.cell(100, 10, "KONTIFY STRATEGIC CONSULTING - CONFIDENTIAL & PROPRIETARY", 0, 0, 'L')
-        self.cell(0, 10, f'PAGE {self.page_no()} OF {{nb}}', 0, 0, 'R')
+        self.cell(100, 10, safe_text("KONTIFY STRATEGIC CONSULTING - CONFIDENTIAL & PROPRIETARY"), 0, 0, 'L')
+        self.cell(0, 10, safe_text(f'PAGE {self.page_no()} OF {{nb}}'), 0, 0, 'R')
 
     def draw_gauge(self, x, y, score):
+        # Asegurar que el score es numérico
+        try:
+            score = float(score)
+        except:
+            score = 0
+            
         # Fondo del gauge
         self.set_draw_color(230, 230, 230)
         self.set_line_width(4)
@@ -93,23 +99,24 @@ class DiagnosticPDF(FPDF):
         self.cell(40, 10, f"{score}%", 0, 0, 'C')
 
 def safe_text(txt):
-    """Limpia texto para evitar errores de codificación en FPDF (latin-1)"""
-    if not txt: return ""
-    # Reemplazos comunes de Unicode que no están en latin-1
+    """Limpia texto de forma agresiva para evitar el error 'latin-1' en FPDF"""
+    if txt is None: return "No proporcionado"
+    if not isinstance(txt, str): txt = str(txt)
+    
+    # Reemplazos manuales para caracteres comunes de alta gama (Unicode)
     replacements = {
-        '\u2013': '-', # en dash
-        '\u2014': '-', # em dash
-        '\u2018': "'", # left single quote
-        '\u2019': "'", # right single quote
-        '\u201c': '"', # left double quote
-        '\u201d': '"', # right double quote
-        '\u2022': '•', # bullet
-        '\u2026': '...', # ellipsis
+        '\u2013': '-', '\u2014': '-',
+        '\u2018': "'", '\u2019': "'",
+        '\u201c': '"', '\u201d': '"',
+        '\u2022': '*', '\u2026': '...',
+        '\u00a0': ' ', '\u200b': '',
+        '\u2122': '(TM)', '\u00ae': '(R)', '\u00a9': '(C)',
     }
     for k, v in replacements.items():
         txt = txt.replace(k, v)
-    
-    # Forzar a latin-1 ignorando lo que no sea compatible
+        
+    # El truco final: Codificar a latin-1 ignorando lo que NO sea latin-1
+    # FPDF 1.7 usa latin-1 internamente. ñ, á, é, í, ó, ú están en latin-1.
     return txt.encode('latin-1', 'replace').decode('latin-1')
 
 def generate_pdf_final(json_data, output_path):
@@ -210,7 +217,7 @@ def generate_pdf_final(json_data, output_path):
     pdf.set_text_color(30, 30, 30)
     
     content = data.get('markdown_content', '')
-    processed_content = content.replace('**', '').replace('#', '').replace('*', '•')
+    processed_content = content.replace('**', '').replace('#', '').replace('*', '*')
     
     pdf.multi_cell(0, 5.5, safe_text(processed_content), 1, 'L', fill=True)
     

@@ -41,19 +41,25 @@ def notify_all(diagnostic_data, pdf_url):
         timestamp = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     
     # Búsqueda robusta de metadatos (IA puede variar nombres de llaves)
-    company = lead.get('company_name') or lead.get('company') or report.get('company_name') or "N/A"
-    rep_name = lead.get('contact_name') or lead.get('representative') or lead.get('name') or report.get('contact_name') or "N/A"
-    email = lead.get('contact_email') or lead.get('email') or report.get('contact_email') or report.get('email') or "N/A"
-    niche_id = lead.get('niche_id') or lead.get('industry') or "N/A"
+    company = str(lead.get('company_name') or lead.get('company') or report.get('company_name') or "N/A")
+    rep_name = str(lead.get('contact_name') or lead.get('representative') or lead.get('name') or report.get('contact_name') or "N/A")
+    email = str(lead.get('contact_email') or lead.get('email') or report.get('contact_email') or report.get('email') or "N/A")
+    niche_id = str(lead.get('niche_id') or lead.get('industry') or "N/A")
 
     score = report.get('overall_risk_score', report.get('risk_score', 'N/A'))
     summary = report.get('summary', report.get('risk_level', report.get('recommendation', 'N/A')))
+    if isinstance(summary, dict):
+        summary = json.dumps(summary, ensure_ascii=False)
+    else:
+        summary = str(summary)
     
     pitch = payload.get('sales_pitch', '')
     if not pitch:
         pitch = report.get('pitch', '')
     if isinstance(pitch, dict):
-        pitch = pitch.get('urgent_recommendation', '')
+        pitch = pitch.get('urgent_recommendation', 'N/A')
+    
+    pitch = str(pitch)
     
     recommended_service = "Específico por Nicho" # Fallback
     if score != 'N/A' and str(score).isdigit() and int(score) > 70:
@@ -98,8 +104,8 @@ def send_webhook_notification(lead, score, recommended_service, pdf_url):
         print(f"❌ Error enviando Webhook: {e}")
 
 def register_in_sheets(lead, score, summary, pdf_url, recommended_service, timestamp):
-    sheets_id = os.getenv("GOOGLE_SHEETS_ID")
-    creds_path = 'google_creds.json' # Debe ser proporcionado por el usuario
+    sheets_id = "1zYPKfP1xObqhxkRNmaTjCbjI-jPR1Vec2c9uMHH0sVg"
+    creds_path = 'google_creds.json'
     
     if not sheets_id or not os.path.exists(creds_path):
         print("⚠️ Google Sheets no configurado (Falta ID o google_creds.json).")
