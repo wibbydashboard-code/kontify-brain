@@ -2,7 +2,6 @@ import os
 import json
 import requests
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 from dotenv import load_dotenv
 import sys
 import io
