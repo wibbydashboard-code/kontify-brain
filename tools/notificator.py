@@ -68,7 +68,9 @@ def notify_all(diagnostic_data, pdf_url):
         "niche": niche_id,
         "representative": rep_name,
         "email": email,
-        "phone": lead.get('phone', 'N/A')
+        "phone": lead.get('phone', 'N/A'),
+        "rfc": lead.get('rfc', 'N/A'),
+        "activity": lead.get('activity', 'N/A')
     }
     register_in_sheets(lead_data, score, summary, pdf_url, recommended_service, timestamp)
     
@@ -123,18 +125,22 @@ def register_in_sheets(lead, score, summary, pdf_url, recommended_service, times
         # H: Hallazgo Crítico
         # I: Servicio Sugerido
         # J: Link al PDF
+        # K: RFC
+        # L: Actividad Principal
         
         row = [
-            timestamp,                         # A: Fecha y Hora
+            timestamp,                         # A
             lead.get('company', ''),           # B
             lead.get('niche', ''),             # C
             lead.get('representative', ''),    # D
             lead.get('email', ''),             # E
-            lead.get('phone', 'N/A'),          # F (Teléfono)
-            score,                             # G (Score de Riesgo)
-            summary[:150],                     # H (Hallazgo Crítico)
-            recommended_service,                # I (Servicio Sugerido)
-            pdf_url                            # J (Link al PDF)
+            lead.get('phone', 'N/A'),          # F
+            score,                             # G
+            summary[:150],                     # H
+            recommended_service,               # I
+            pdf_url,                           # J
+            lead.get('rfc', 'N/A'),            # K
+            lead.get('activity', 'N/A')        # L
         ]
         sheet.append_row(row)
         print("✅ Lead registrado en Google Sheets con mapeo corregido y robusto.")

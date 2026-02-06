@@ -126,6 +126,37 @@ def generate_pdf_final(json_data, output_path):
     
     pdf.ln(15)
 
+    # --- FINANCIAL DATA SECTION ---
+    fin = lead_meta.get('financial_data', {})
+    if fin:
+        pdf.set_fill_color(245, 245, 245)
+        pdf.rect(15, pdf.get_y(), 180, 20, 'F')
+        
+        pdf.set_font('helvetica', 'B', 8)
+        pdf.set_text_color(100, 100, 100)
+        pdf.set_xy(20, pdf.get_y() + 2)
+        pdf.cell(40, 5, "RFC / TAX ID", 0, 0)
+        pdf.cell(45, 5, "VENTAS ANUALES", 0, 0)
+        pdf.cell(45, 5, "UTILIDAD NETA", 0, 0)
+        pdf.cell(45, 5, "PATRIMONIO ESTIMADO", 0, 1)
+        
+        pdf.set_font('helvetica', 'B', 10)
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_x(20)
+        pdf.cell(40, 5, str(lead_meta.get('rfc', 'N/A')).upper(), 0, 0)
+        pdf.cell(45, 5, f"$ {fin.get('sales', '0')}", 0, 0)
+        pdf.cell(45, 5, f"$ {fin.get('profit', '0')}", 0, 0)
+        
+        try:
+            # Limpiar strings de comas antes de convertir
+            a = float(str(fin.get('assets', 0)).replace(',', ''))
+            p = float(str(fin.get('liabilities', 0)).replace(',', ''))
+            ap_str = f"$ {a - p:,.0f}"
+        except:
+            ap_str = "N/A"
+        pdf.cell(45, 5, ap_str, 0, 1)
+        pdf.ln(10)
+
     # --- PITCH SECTION (Strategic Recommendation) ---
     pitch = data.get('sales_pitch', '')
     if isinstance(pitch, dict): pitch = pitch.get('urgent_recommendation', 'Requiere intervención inmediata.')

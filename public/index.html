@@ -5,13 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kontify - Mentores Estratégicos | Diagnóstico Corporativo</title>
-    <!-- Favicon Oficial Kontify -->
-    <link rel="icon" type="image/png" href="/assets/favicon.png">
-
-    <!-- PWA & SEO -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#007BFF">
-    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    <!-- Iconos de Marca (Unificados + Fallback Instantáneo) -->
+    <link rel="icon" type="image/png" href="assets/favicon.png?v=4">
+    <!-- PRUEBA DE FAVICON (Círculo Verde Kontify) -->
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%23C1FF72%22/></svg>">
+    <link rel="apple-touch-icon" href="assets/favicon.png?v=4">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
     <style>
@@ -347,12 +346,45 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label>RFC (Opcional)</label>
+                    <input type="text" id="rfc" placeholder="Ej. ABC123456XYZ">
+                </div>
+                <div class="form-group">
+                    <label>Actividad Principal / Giro</label>
+                    <input type="text" id="business_activity" placeholder="Ej. Comercialización de acero">
+                </div>
+                <div class="form-group">
                     <label>Su Nombre Completo</label>
                     <input type="text" id="contact_name" placeholder="Ej. Juan Pérez">
                 </div>
                 <div class="form-group">
                     <label>Correo Electrónico Corporativo</label>
                     <input type="email" id="contact_email" placeholder="ejemplo@empresa.com">
+                </div>
+
+                <div
+                    style="background: rgba(0,123,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px dashed var(--azul-electrico);">
+                    <h3
+                        style="color: var(--azul-electrico); font-size: 14px; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px;">
+                        📊 Datos Financieros (Estimados Anuales)</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Ventas Anuales (MXN)</label>
+                            <input type="text" id="sales_annual" placeholder="Ej. 10,000,000">
+                        </div>
+                        <div class="form-group">
+                            <label>Utilidad Neta (MXN)</label>
+                            <input type="text" id="net_profit" placeholder="Ej. 2,000,000">
+                        </div>
+                        <div class="form-group">
+                            <label>Total Activos</label>
+                            <input type="text" id="total_assets" placeholder="Ej. 50,000,000">
+                        </div>
+                        <div class="form-group">
+                            <label>Total Pasivos</label>
+                            <input type="text" id="total_liabilities" placeholder="Ej. 30,000,000">
+                        </div>
+                    </div>
                 </div>
                 <button class="btn-next" onclick="startQuiz()">Comenzar Diagnóstico Técnico</button>
             </div>
@@ -423,10 +455,26 @@
             const contact_email = document.getElementById('contact_email').value;
             const niche = document.getElementById('niche_id').value;
 
+            // Nuevos Campos
+            const rfc = document.getElementById('rfc').value;
+            const activity = document.getElementById('business_activity').value;
+            const financial_data = {
+                sales: document.getElementById('sales_annual').value,
+                profit: document.getElementById('net_profit').value,
+                assets: document.getElementById('total_assets').value,
+                liabilities: document.getElementById('total_liabilities').value
+            };
+
             if (!company_name || !contact_name || !contact_email) {
                 alert("Por favor complete todos los campos obligatorios.");
                 return;
             }
+
+            // Guardar metadatos extendidos globalmente
+            window.leadMetadata = {
+                company_name, contact_name, contact_email, niche_id: niche,
+                rfc, activity, financial_data
+            };
 
             // Mostrar Loading
             const loading = document.getElementById('loading');
@@ -500,15 +548,10 @@
             loading.style.display = 'flex';
 
             const payload = {
-                lead_metadata: {
-                    company_name: document.getElementById('company_name').value,
-                    niche_id: document.getElementById('niche_id').value,
-                    contact_name: document.getElementById('contact_name').value,
-                    contact_email: document.getElementById('contact_email').value,
-                    timestamp: new Date().toISOString(),
-                    source_url: window.location.href
-                },
-                responses: responses
+                lead_metadata: window.leadMetadata,
+                responses: responses,
+                timestamp: new Date().toISOString(),
+                source_url: window.location.href
             };
 
             try {
