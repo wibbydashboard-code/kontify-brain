@@ -72,8 +72,8 @@ def notify_all(diagnostic_data, pdf_url):
     }
     register_in_sheets(lead_data, score, summary, pdf_url, recommended_service, timestamp)
     
-    # 3. Email de Cortesía (Simulado o vía Resend si hay API Key)
-    send_courtesy_email(lead)
+    # 3. Email de Cortesía (Vía SendGrid)
+    send_courtesy_email(lead, pdf_url)
 
 def send_webhook_notification(lead, score, recommended_service, pdf_url):
     webhook_url = os.getenv("SLACK_WEBHOOK_URL")
@@ -155,11 +155,48 @@ def log_lead_locally(lead, score, summary, pdf_url):
         f.write(json.dumps(log_entry) + '\n')
     print(f"📝 Lead registrado localmente en {log_path}")
 
-def send_courtesy_email(lead):
-    # Simulación de envío de email
-    email = lead.get('contact_email')
-    name = lead.get('contact_name')
-    print(f"📧 [Email de Cortesía] Enviado a {name} <{email}>: 'Gracias por su interés en Kontify. Un Mentor Estratégico lo contactará pronto.'")
+def send_courtesy_email(lead, pdf_url):
+    """Envío real de email vía SendGrid"""
+    api_key = os.getenv("SENDGRID_API_KEY")
+    sender_email = os.getenv("SENDER_EMAIL", "contacto@mentoresestrategicos.com") # Default
+    
+    if not api_key:
+        print("⚠️ SENDGRID_API_KEY no configurada. Saltando envío de email.")
+        return
+
+    email = lead.get('contact_email') or lead.get('email')
+    name = lead.get('contact_name') or lead.get('representative')
+    
+    if not email:
+        print("⚠️ No se encontró email del lead para enviar cortesía.")
+        return
+
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail
+
+    message = Mail(
+        from_email=sender_email,
+        to_emails=email,
+        subject='Tu Diagnóstico de Riesgo Kontify está listo 💼',
+        html_content=f"""
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <h2 style="color: #c1ff72; background: #000; padding: 10px;">¡Hola {name}!</h2>
+                <p>Gracias por completar el diagnóstico de riesgo con <strong>Kontify - Mentores Estratégicos</strong>.</p>
+                <p>Tu reporte detallado ya ha sido procesado por nuestra Inteligencia Artificial y está disponible para descarga:</p>
+                <a href="{pdf_url}" style="display: inline-block; padding: 12px 20px; background-color: #000; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold;">📥 Descargar mi Reporte PDF</a>
+                <p>En breve, uno de nuestros consultores senior se pondrá en contacto contigo para profundizar en los hallazgos críticos.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                <p style="font-size: 12px; color: #888;">Este es un correo automático de Kontify. Si no solicitaste este diagnóstico, por favor ignora este mensaje.</p>
+            </div>
+        """
+    )
+
+    try:
+        sg = SendGridAPIClient(api_key)
+        response = sg.send(message)
+        print(f"✅ Email enviado a {email} (Status: {response.status_code})")
+    except Exception as e:
+        print(f"❌ Error enviando email con SendGrid: {e}")
 
 if __name__ == "__main__":
     # Prueba rápida con datos simulados
