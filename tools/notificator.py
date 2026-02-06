@@ -113,20 +113,29 @@ def register_in_sheets(lead, score, summary, pdf_url, recommended_service, times
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         
         if creds_json:
-            # Cargar desde variable de entorno (Render/Producción)
+            # Limpieza robusta del JSON de entorno
             import json
-            info = json.loads(creds_json)
+            import re
+            # Eliminar comentarios de PowerShell o basura si se coló
+            creds_json_clean = re.sub(r'#.*', '', creds_json).strip()
+            info = json.loads(creds_json_clean)
             creds = Credentials.from_service_account_info(info, scopes=scope)
-            print(f"🔐 CREDENCIALES: Cargadas desde ENV (GOOGLE_CREDS_JSON). Client Email: {info.get('client_email')}")
+            print(f"🔐 CRM: Credenciales ENV cargadas ({info.get('client_email')})")
         else:
-            # Fallback a archivo local (Desarrollo)
             creds = Credentials.from_service_account_file(creds_path, scopes=scope)
-            print(f"📂 CREDENCIALES: Cargadas desde ARCHIVO (google_creds.json).")
+            print(f"📂 CRM: Credenciales ARCHIVO cargadas.")
             
         client = gspread.authorize(creds)
-        print(f"📊 CONEXIÓN: Abriendo Sheet {sheets_id}...")
-        sheet = client.open_by_key(sheets_id).sheet1
-        print(f"✅ CONEXIÓN: Éxito al abrir '{sheet.title}'. Preparando fila...")
+        print(f"📊 CRM: Conectando a Sheet ID: {sheets_id}...")
+        
+        # Intento de apertura con manejo de errores específico
+        try:
+            spreadsheet = client.open_by_key(sheets_id)
+            sheet = spreadsheet.get_worksheet(0) # Más seguro que .sheet1
+            print(f"✅ CRM: Conectado exitosamente a '{spreadsheet.title}'")
+        except Exception as sheet_err:
+            print(f"🛑 CRM ERROR: No se pudo abrir la hoja. ¿ID correcto? ¿Compartida con el correo anterior? Error: {sheet_err}")
+            raise sheet_err
         
         # Mapeo exacto según PROTOCOLO MAESTRO KONTIFY:
         # A: Fecha y Hora | B: Empresa | C: Nicho | D: Representante | E: Email | F: Teléfono
