@@ -38,36 +38,71 @@ def serve_index():
 def submit_quiz():
     try:
         data = request.json
-        lead_meta = data.get('lead_metadata', {})
-        company_name = lead_meta.get('company_name', 'Lead').replace(' ', '_')
-        rfc = lead_meta.get('rfc')
+        if not data:
+            return jsonify({"status": "error", "message": "No se recibieron datos en la solicitud."}), 400
+            
+        # Extraer metadatos (Soporte para múltiples formatos)
+        lead_meta = data.get('lead_metadata') or data.get('lead_assessment') or data.get('leadMetadata', {})
         
+        # Búsqueda robusta de RFC (Case insensitive y fallback)
+        rfc = None
+        for key in ['rfc', 'RFC', 'Rfc']:
+            rfc = lead_meta.get(key)
+            if rfc: break
+            
         if not rfc:
+            # Intento final en la raíz del objeto
+            rfc = data.get('rfc') or data.get('RFC')
+            
+        if not rfc:
+            print(f"⚠️ Error: RFC faltante en el payload: {json.dumps(data, indent=2)}")
             return jsonify({"status": "error", "message": "RFC es un campo obligatorio para generar el diagnóstico técnico."}), 400
             
+        niche_id = lead_meta.get('niche_id')
+        if not niche_id:
+            return jsonify({"status": "error", "message": "El sector/nicho es obligatorio."}), 400
+            
+        company_name = str(lead_meta.get('company_name', 'Lead')).replace(' ', '_')
+        
         # 1. Procesar Diagnóstico con IA
         diagnostic_result = run_diagnostic(data)
         
+        # Manejar errores de la IA
+        if not diagnostic_result or 'error' in diagnostic_result:
+            error_msg = diagnostic_result.get('error', 'Error desconocido en el procesamiento de IA') if diagnostic_result else 'No se obtuvo respuesta de la IA'
+            return jsonify({
+                "status": "error", 
+                "message": f"Fallo en el motor de análisis: {error_msg}"
+            }), 500
+            
         # ASEGURAR METADATOS: Fusionar metadata original si la IA la omitió
         if 'lead_metadata' not in diagnostic_result:
-            diagnostic_result['lead_metadata'] = data.get('lead_metadata', {})
+            diagnostic_result['lead_metadata'] = lead_meta
         else:
-            # Si existe, nos aseguramos de que tenga los datos financieros originales
-            diagnostic_result['lead_metadata'].update(data.get('lead_metadata', {}))
+            # Si existe, nos aseguramos de que tenga los datos originales
+            diagnostic_result['lead_metadata'].update(lead_meta)
         
         # 2. Generar PDF
         pdf_filename = f"KONTIFY_Report_{company_name}_{uuid.uuid4().hex[:6]}.pdf"
         pdf_path = os.path.join(REPORTS_DIR, pdf_filename)
         
-        generate_pdf_final(diagnostic_result, pdf_path)
+        try:
+            generate_pdf_final(diagnostic_result, pdf_path)
+        except Exception as pdf_err:
+            print(f"❌ Error generando PDF: {str(pdf_err)}")
+            return jsonify({
+                "status": "error", 
+                "message": f"Error al generar el documento PDF: {str(pdf_err)}"
+            }), 500
         
-        # 3. Notificar y Registrar (Nueva Integración)
-        host_url = request.host_url.rstrip('/')
-        full_pdf_url = f"{host_url}/reports/{pdf_filename}"
-        notify_all(diagnostic_result, full_pdf_url)
-        
-        # 4. Limpieza de .tmp (Opcional, manteniendo integridad)
-        # En una versión de producción moveríamos aquí los archivos temporales
+        # 3. Notificar y Registrar
+        try:
+            host_url = request.host_url.rstrip('/')
+            full_pdf_url = f"{host_url}/reports/{pdf_filename}"
+            notify_all(diagnostic_result, full_pdf_url)
+        except Exception as notify_err:
+            print(f"⚠️ Error en notificaciones (No crítico): {str(notify_err)}")
+            # No retornamos error aquí para permitir que el usuario descargue su PDF
         
         return jsonify({
             "status": "success",
@@ -75,7 +110,9 @@ def submit_quiz():
             "report_url": f"/reports/{pdf_filename}"
         })
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": f"Error interno: {str(e)}"}), 500
 
 @app.route('/api/questions/<niche_id>', methods=['GET'])
 def get_questions(niche_id):

@@ -492,18 +492,18 @@
         }
 
         async function startQuiz() {
-            const company_name = document.getElementById('company_name').value;
-            const contact_name = document.getElementById('contact_name').value;
-            const contact_role = document.getElementById('contact_role').value;
-            const contact_email = document.getElementById('contact_email').value;
-            const contact_phone = document.getElementById('contact_phone').value;
+            const company_name = document.getElementById('company_name').value.trim();
+            const contact_name = document.getElementById('contact_name').value.trim();
+            const contact_role = document.getElementById('contact_role').value.trim();
+            const contact_email = document.getElementById('contact_email').value.trim();
+            const contact_phone = document.getElementById('contact_phone').value.trim();
             const niche = document.getElementById('niche_id').value;
             const billing_range = document.getElementById('billing_range').value;
-            const rfc = document.getElementById('rfc').value;
-            const main_activity = document.getElementById('main_activity').value;
+            const rfc = document.getElementById('rfc').value.trim();
+            const main_activity = document.getElementById('main_activity').value.trim();
 
             if (!company_name || !contact_name || !contact_email || !rfc || !main_activity || !billing_range) {
-                alert("Por favor complete todos los campos obligatorios (*).");
+                alert("Por favor complete todos los campos obligatorios (*) y asegúrese de que no estén vacíos.");
                 return;
             }
 
@@ -519,10 +519,10 @@
                 rfc,
                 main_activity,
                 financial_data: {
-                    sales: document.getElementById('sales_annual').value,
-                    profit: document.getElementById('net_profit').value,
-                    assets: document.getElementById('total_assets').value,
-                    liabilities: document.getElementById('total_liabilities').value
+                    sales: document.getElementById('sales_annual').value.trim(),
+                    profit: document.getElementById('net_profit').value.trim(),
+                    assets: document.getElementById('total_assets').value.trim(),
+                    liabilities: document.getElementById('total_liabilities').value.trim()
                 }
             };
 
