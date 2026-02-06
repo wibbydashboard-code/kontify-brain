@@ -115,14 +115,23 @@ def register_in_sheets(lead, score, summary, pdf_url, recommended_service, times
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         
         if creds_json:
-            # Limpieza robusta del JSON de entorno
+            # Limpieza y reparación de JSON (Protocolo Anti-Corrupción Render)
             import json
             import re
-            # Eliminar comentarios de PowerShell o basura si se coló
+            
+            # 1. Limpiar basura de pegado
             creds_json_clean = re.sub(r'#.*', '', creds_json).strip()
+            # 2. Reparar escapes de saltos de línea literales
+            creds_json_clean = creds_json_clean.replace('\\\\n', '\\n')
+            
             info = json.loads(creds_json_clean)
+            
+            # 3. Reparación obligatoria de la llave privada (Common fix for Cloud Envs)
+            if "private_key" in info:
+                info["private_key"] = info["private_key"].replace("\\n", "\n")
+                
             creds = Credentials.from_service_account_info(info, scopes=scope)
-            print(f"🔐 CRM: Credenciales ENV cargadas ({info.get('client_email')})")
+            print(f"🔐 CRM: Credenciales ENV reparadas y cargadas ({info.get('client_email')})")
         else:
             creds = Credentials.from_service_account_file(creds_path, scopes=scope)
             print(f"📂 CRM: Credenciales ARCHIVO cargadas.")
