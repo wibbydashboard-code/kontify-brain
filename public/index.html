@@ -591,6 +591,26 @@
             showQuestion();
         }
 
+        // PERSISTENCIA DE DATOS (Auto-recuperación)
+        function saveProgress() {
+            const progress = {
+                leadMetadata: window.leadMetadata,
+                responses: responses,
+                currentStep: currentStep,
+                niche: document.getElementById('niche_id').value
+            };
+            localStorage.setItem('kontify_progress', JSON.stringify(progress));
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('kontify_progress');
+            if (saved) {
+                const data = JSON.parse(saved);
+                // Si el usuario quiere recuperar, podríamos preguntar, pero por ahora solo lo guardamos
+                console.log("Progreso recuperable disponible:", data);
+            }
+        }
+
         async function submitFinal() {
             const loading = document.getElementById('loading');
             const loadingText = document.getElementById('loading-text');
@@ -615,6 +635,7 @@
                 loading.style.display = 'none';
 
                 if (result.status === "success") {
+                    localStorage.removeItem('kontify_progress'); // Limpiar al tener éxito
                     document.getElementById('step-2').style.display = 'none';
                     document.getElementById('step-3').style.display = 'block';
 
@@ -631,6 +652,15 @@
                 loading.style.display = 'none';
             }
         }
+
+        // Llamar a guardar después de cada respuesta
+        const originalAnswer = answer;
+        answer = function (val) {
+            originalAnswer(val);
+            saveProgress();
+        };
+
+        window.onload = loadProgress;
     </script>
 </body>
 
