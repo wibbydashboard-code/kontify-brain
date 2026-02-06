@@ -38,8 +38,13 @@ def serve_index():
 def submit_quiz():
     try:
         data = request.json
-        company_name = data.get('lead_metadata', {}).get('company_name', 'Lead').replace(' ', '_')
+        lead_meta = data.get('lead_metadata', {})
+        company_name = lead_meta.get('company_name', 'Lead').replace(' ', '_')
+        rfc = lead_meta.get('rfc')
         
+        if not rfc:
+            return jsonify({"status": "error", "message": "RFC es un campo obligatorio para generar el diagnóstico técnico."}), 400
+            
         # 1. Procesar Diagnóstico con IA
         diagnostic_result = run_diagnostic(data)
         

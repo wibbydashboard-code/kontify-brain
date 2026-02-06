@@ -43,8 +43,12 @@ def notify_all(diagnostic_data, pdf_url):
     # Búsqueda robusta de metadatos (IA puede variar nombres de llaves)
     company = str(lead.get('company_name') or lead.get('company') or report.get('company_name') or "N/A")
     rep_name = str(lead.get('contact_name') or lead.get('representative') or lead.get('name') or report.get('contact_name') or "N/A")
+    rep_role = str(lead.get('contact_role') or lead.get('role') or "N/A")
     email = str(lead.get('contact_email') or lead.get('email') or report.get('contact_email') or report.get('email') or "N/A")
+    phone = str(lead.get('contact_phone') or lead.get('phone') or "N/A")
     niche_id = str(lead.get('niche_id') or lead.get('industry') or "N/A")
+    rfc = str(lead.get('rfc') or "N/A")
+    activity = str(lead.get('main_activity') or lead.get('activity') or "N/A")
 
     score = report.get('overall_risk_score', report.get('risk_score', 'N/A'))
     summary = report.get('summary', report.get('risk_level', report.get('recommendation', 'N/A')))
@@ -73,10 +77,11 @@ def notify_all(diagnostic_data, pdf_url):
         "company": company,
         "niche": niche_id,
         "representative": rep_name,
+        "role": rep_role,
         "email": email,
-        "phone": lead.get('phone', 'N/A'),
-        "rfc": lead.get('rfc', 'N/A'),
-        "activity": lead.get('activity', 'N/A')
+        "phone": phone,
+        "rfc": rfc,
+        "activity": activity
     }
     register_in_sheets(lead_data, score, summary, pdf_url, recommended_service, timestamp)
     
@@ -136,10 +141,10 @@ def register_in_sheets(lead, score, summary, pdf_url, recommended_service, times
         
         row = [
             timestamp,                         # A
-            lead.get('company', ''),           # B
-            lead.get('niche', ''),             # C
-            lead.get('representative', ''),    # D
-            lead.get('email', ''),             # E
+            lead.get('company', 'N/A'),        # B
+            lead.get('niche', 'N/A'),          # C
+            f"{lead.get('representative', 'N/A')} ({lead.get('role', 'N/A')})", # D: Rep y Cargo
+            lead.get('email', 'N/A'),          # E
             lead.get('phone', 'N/A'),          # F
             score,                             # G
             summary[:150],                     # H

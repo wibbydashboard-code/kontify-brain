@@ -138,8 +138,14 @@ def generate_pdf_final(json_data, output_path):
     pdf.cell(0, 12, safe_text("DIAGNÓSTICO ESTRATÉGICO"), 0, 1)
     
     pdf.set_text_color(*pdf.dark_color)
-    pdf.set_font('helvetica', 'B', 12)
-    pdf.cell(0, 8, safe_text(f"CLIENTE: {lead_meta.get('company_name', 'Lead Assessment').upper()}"), 0, 1)
+    pdf.set_font('helvetica', 'B', 11)
+    company = lead_meta.get('company_name', 'Lead Assessment').upper()
+    rfc = lead_meta.get('rfc', 'N/A').upper()
+    giro = lead_meta.get('main_activity', lead_meta.get('activity', 'N/A')).upper()
+    
+    pdf.cell(0, 7, safe_text(f"CLIENTE: {company}"), 0, 1)
+    pdf.set_font('helvetica', 'B', 9)
+    pdf.cell(0, 5, safe_text(f"RFC: {rfc} | GIRO: {giro}"), 0, 1)
     pdf.ln(2)
     
     # Gauge Score

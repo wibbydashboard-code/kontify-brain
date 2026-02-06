@@ -333,11 +333,22 @@
                 </div>
                 <div class="form-group">
                     <label>Nombre de la Empresa *</label>
-                    <input type="text" id="company_name" placeholder="Ej. Empresa de Construcción Peña">
+                    <input type="text" id="company_name" placeholder="Ej. Empresa de Construcción Peña"
+                        oninput="validatePhase1()">
+                </div>
+                <div class="form-group">
+                    <label>RFC *</label>
+                    <input type="text" id="rfc" placeholder="Ej. ABC123456XYZ" oninput="validatePhase1()">
+                </div>
+                <div class="form-group">
+                    <label>Actividad Principal / Giro *</label>
+                    <input type="text" id="main_activity" placeholder="Ej. Comercialización de acero"
+                        oninput="validatePhase1()">
                 </div>
                 <div class="form-group">
                     <label>Rango de Facturación Anual (MXN) *</label>
-                    <select id="billing_range">
+                    <select id="billing_range" onchange="validatePhase1()">
+                        <option value="">Seleccione un rango...</option>
                         <option value="< 10M">Menos de $10M</option>
                         <option value="10M - 50M">$10M - $50M</option>
                         <option value="50M - 100M">$50M - $100M</option>
@@ -345,16 +356,8 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Principales Activos Fijos (Maquinaria, Inmuebles, Flotas)</label>
-                    <input type="text" id="fixed_assets" placeholder="Ej. 5 Tractocamiones, 1 Bodega">
-                </div>
-                <div class="form-group">
-                    <label>Actividad Principal / Giro</label>
-                    <input type="text" id="business_activity" placeholder="Ej. Transporte de Carga Federal">
-                </div>
-                <div class="form-group">
                     <label>Sector / Nicho *</label>
-                    <select id="niche_id">
+                    <select id="niche_id" onchange="validatePhase1()">
                         <option value="holding">Holding / Grupo Familiar</option>
                         <option value="constructora">Constructora e Inmobiliaria</option>
                         <option value="autotransporte">Autotransporte de Carga</option>
@@ -363,30 +366,34 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Su Nombre Completo *</label>
-                    <input type="text" id="contact_name" placeholder="Ej. Juan Pérez">
+                    <label>Nombre del Representante *</label>
+                    <input type="text" id="contact_name" placeholder="Ej. Juan Pérez" oninput="validatePhase1()">
+                </div>
+                <div class="form-group">
+                    <label>Cargo del Representante *</label>
+                    <input type="text" id="contact_role" placeholder="Ej. Director General" oninput="validatePhase1()">
                 </div>
                 <div class="form-group">
                     <label>Correo Electrónico Corporativo *</label>
-                    <input type="email" id="contact_email" placeholder="ejemplo@empresa.com">
+                    <input type="email" id="contact_email" placeholder="ejemplo@empresa.com" oninput="validatePhase1()">
                 </div>
                 <div class="form-group">
-                    <label>RFC (Opcional)</label>
-                    <input type="text" id="rfc" placeholder="Ej. ABC123456XYZ">
+                    <label>Teléfono de Contacto</label>
+                    <input type="text" id="contact_phone" placeholder="Ej. 55 1234 5678">
                 </div>
 
                 <div
                     style="background: rgba(0,123,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px dashed var(--azul-electrico);">
                     <h3
                         style="color: var(--azul-electrico); font-size: 14px; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px;">
-                        📊 Datos Financieros (Estimados Anuales)</h3>
+                        📊 Datos Financieros (Estimados)</h3>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="form-group">
-                            <label>Ventas Anuales (MXN)</label>
+                            <label>Ventas Anuales</label>
                             <input type="text" id="sales_annual" placeholder="Ej. 10,000,000">
                         </div>
                         <div class="form-group">
-                            <label>Utilidad Neta (MXN)</label>
+                            <label>Utilidad Neta</label>
                             <input type="text" id="net_profit" placeholder="Ej. 2,000,000">
                         </div>
                         <div class="form-group">
@@ -399,7 +406,8 @@
                         </div>
                     </div>
                 </div>
-                <button class="btn-next" onclick="startQuiz()">Comenzar Diagnóstico Técnico</button>
+                <button class="btn-next" id="btn-start" onclick="startQuiz()" disabled
+                    style="opacity: 0.5; cursor: not-allowed;">Comenzar Diagnóstico Técnico</button>
             </div>
 
             <!-- Step 2: Quiz Dinámico -->
@@ -462,17 +470,39 @@
         let responses = [];
         let questions = [];
 
+        function validatePhase1() {
+            const company = document.getElementById('company_name')?.value;
+            const rfc = document.getElementById('rfc')?.value;
+            const activity = document.getElementById('main_activity')?.value;
+            const billing = document.getElementById('billing_range')?.value;
+            const name = document.getElementById('contact_name')?.value;
+            const role = document.getElementById('contact_role')?.value;
+            const email = document.getElementById('contact_email')?.value;
+            const btn = document.getElementById('btn-start');
+
+            if (company && rfc && activity && billing && name && role && email) {
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                btn.style.cursor = "pointer";
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = "0.5";
+                btn.style.cursor = "not-allowed";
+            }
+        }
+
         async function startQuiz() {
             const company_name = document.getElementById('company_name').value;
             const contact_name = document.getElementById('contact_name').value;
+            const contact_role = document.getElementById('contact_role').value;
             const contact_email = document.getElementById('contact_email').value;
+            const contact_phone = document.getElementById('contact_phone').value;
             const niche = document.getElementById('niche_id').value;
             const billing_range = document.getElementById('billing_range').value;
-            const fixed_assets = document.getElementById('fixed_assets').value;
             const rfc = document.getElementById('rfc').value;
-            const activity = document.getElementById('business_activity').value;
+            const main_activity = document.getElementById('main_activity').value;
 
-            if (!company_name || !contact_name || !contact_email) {
+            if (!company_name || !contact_name || !contact_email || !rfc || !main_activity || !billing_range) {
                 alert("Por favor complete todos los campos obligatorios (*).");
                 return;
             }
@@ -481,12 +511,13 @@
             window.leadMetadata = {
                 company_name,
                 contact_name,
+                contact_role,
                 contact_email,
+                contact_phone,
                 niche_id: niche,
                 billing_range,
-                fixed_assets,
                 rfc,
-                activity,
+                main_activity,
                 financial_data: {
                     sales: document.getElementById('sales_annual').value,
                     profit: document.getElementById('net_profit').value,
