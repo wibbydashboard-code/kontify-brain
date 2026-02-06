@@ -3,10 +3,10 @@
 **Objetivo:** Evaluación de Blindaje Patrimonial, SIROC y Optimización Fiscal.
 
 ## I. Estructura y Registro (Q1-Q10)
-1. ¿Sus empresas son S.A. Tradicional, SAPI o Fideicomiso de Construcción?
+1. ¿Cuál es el vehículo legal principal de sus proyectos? [S.A. Tradicional | SAPI | Fideicomiso | Mixto]
 2. ¿Cuenta con registro REPSE vigente para subcontratación?
 3. ¿Tiene registro activo en el SIROC para todas sus obras vigentes?
-4. ¿Utiliza contratos de obra a precio alzado o a precios unitarios?
+4. ¿Qué tipo de contratos utiliza predominantemente? [Precio Alzado | Precios Unitarios | Mixto]
 5. ¿Sus inmuebles para desarrollo están en una PropCo separada de la operativa?
 6. ¿Tiene protocolizados los contratos de asociación en participación (A en P)?
 7. ¿Cuenta con un libro de accionistas actualizado y notariado?
@@ -20,7 +20,7 @@
 13. ¿Tiene contratos individuales de trabajo específicos por obra determinada?
 14. ¿Usa el sistema de autodeterminación (SUA) integrado con su nómina?
 15. ¿Tiene registro de asistencia biométrico en cada frente de obra?
-16. ¿Maneja sindicatos nacionales o locales?
+16. ¿Cómo maneja la relación con sindicatos? [Sindicatos Nacionales | Sindicatos Locales | Ambos | Ninguno]
 17. ¿Cuenta con reglamentos interiores de trabajo depositados?
 18. ¿Tiene seguro de responsabilidad civil para daños a terceros y colindantes?
 19. ¿El personal administrativo está en una empresa de servicios dedicada?

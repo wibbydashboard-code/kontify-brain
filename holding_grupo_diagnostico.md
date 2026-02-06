@@ -3,7 +3,7 @@
 **Objetivo:** Evaluación de Gobernanza, Centralización de Tesorería, Blindaje Corporativo y Sucesión.
 
 ## I. Estructura Corporativa y Legal (Q1-Q10)
-1. ¿Sus empresas son S.A. Tradicional, S.R.L. o SAPI?
+1. ¿Cuál es la figura legal predominante en sus empresas? [S.A. Tradicional | SAPI | S.R.L. | Mixto]
 2. ¿Existe una empresa controladora (Holding) que sea dueña de las acciones de las operativas?
 3. ¿Tiene protocolizados sus Libros de Accionistas en todas las entidades?
 4. ¿Sus estatutos incluyen cláusulas de protección (Drag-along / Tag-along)?

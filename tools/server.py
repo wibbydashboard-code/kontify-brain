@@ -155,12 +155,25 @@ def get_questions(niche_id):
                 current_category = cat_match.group(1).strip()
                 continue
             
-            # Detectar Pregunta
+            # Detectar Pregunta y Opciones
+            # Formato: 1. ¿Pregunta? [Opción 1 | Opción 2]
             q_match = re.search(r'^(\d+)\.\s+(.+)$', line)
             if q_match:
+                full_text = q_match.group(2).strip()
+                options = []
+                
+                # Extraer opciones si existen entre corchetes
+                opt_match = re.search(r'\[([^\]]+)\]$', full_text)
+                if opt_match:
+                    options_raw = opt_match.group(1)
+                    options = [o.strip() for o in options_raw.split('|')]
+                    # Limpiar la pregunta del texto de opciones
+                    full_text = full_text.replace(opt_match.group(0), '').strip()
+                
                 questions.append({
-                    "q": q_match.group(2).strip(),
-                    "cat": current_category
+                    "q": full_text,
+                    "cat": current_category,
+                    "options": options
                 })
                 
         return jsonify(questions)

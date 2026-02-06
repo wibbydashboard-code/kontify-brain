@@ -3,10 +3,10 @@
 **Objetivo:** Cumplimiento de Carta Porte 3.1, Régimen de Coordinados y Blindaje de Flota.
 
 ## I. Estructura Operativa (Q1-Q10)
-1. ¿Sus empresas operan bajo el Régimen de Coordinados?
+1. ¿Bajo qué régimen operan sus empresas? [Régimen de Coordinados | Régimen General | Mixto]
 2. ¿Tiene la flota vehicular a nombre de una empresa distinta a la operativa?
 3. ¿Cuenta con una empresa dedicada exclusivamente al mantenimiento de equipo?
-4. ¿Maneja liquidaciones por viaje con sus operadores?
+4. ¿Cómo maneja las liquidaciones con sus operadores? [Por viaje | Por operador (Sueldo Fijo) | Mixto]
 5. ¿Tiene un contrato de servicios de transporte maestro con sus clientes?
 6. ¿Separa la propiedad de los tractocamiones de la de las cajas/remolques?
 7. ¿Sus estatutos contemplan el objeto social de "Logística y Distribución"?

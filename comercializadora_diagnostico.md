@@ -20,7 +20,7 @@
 13. ¿Cumple con el reporte de "Maestra" y "Local" (BEPS)?
 14. ¿Aplica tratados para evitar la doble tributación en pagos al extranjero?
 15. ¿Tiene retenciones de ISR a residentes en el extranjero por regalías?
-16. ¿Su método de valuación de inventarios es PEPS, promedio o identificado?
+16. ¿Qué método de valuación de inventarios utiliza? [PEPS | Promedio | Identificado | Otro]
 17. ¿Realiza inventarios físicos trimestrales con acta notariada?
 18. ¿Tiene documentado el proceso de destrucción de mercancía obsoleta?
 19. ¿Maneja una Holding Centralizadora de Tesorería?

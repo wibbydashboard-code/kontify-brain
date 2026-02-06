@@ -3,7 +3,7 @@
 **Objetivo:** Evaluación de Costeo, Activos Fijos, Cumplimiento Laboral y Eficiencia Operativa.
 
 ## I. Estructura y Propiedad (Q1-Q10)
-1. ¿Su empresa es S.A., SAPI o cuenta con participación de capital extranjero?
+1. ¿Cuál es la figura legal predominante en su empresa? [S.A. Tradicional | SAPI | Capital Extranjero | Mixto]
 2. ¿La planta física es propiedad de la operativa o está en una PropCo dedicada?
 3. ¿Tiene el objeto social actualizado para incluir procesos de transformación específicos?
 4. ¿Cuenta con una estructura Holding para separar la propiedad de las patentes y marcas?
@@ -15,7 +15,7 @@
 10. ¿Separa legalmente la unidad de fabricación de la unidad de comercialización?
 
 ## II. Gestión de Activos y Maquinaria (Q11-Q25)
-11. ¿La maquinaria de producción es propiedad de la operativa o se maneja por Leasing?
+11. ¿Cuál es el esquema de propiedad de la maquinaria? [Propia (Operativa) | Leasing | Arrendamiento Intersocietario]
 12. ¿Cuenta con un inventario de activos fijos etiquetado y conciliado contablemente?
 13. ¿Tiene bitácoras de mantenimiento preventivo y correctivo (CAPEX) por máquina?
 14. ¿Aplica depreciaciones fiscales aceleradas cuando la ley lo permite?
@@ -32,11 +32,11 @@
 25. ¿Maneja seguros D&O para sus directores de planta y operaciones?
 
 ## III. Costos e Inventarios (Q26-Q40)
-26. ¿Utiliza un sistema de costos (Estándar, Estimado o Real) integrado al ERP?
+26. ¿Qué sistema de costeo utiliza en su producción? [Estándar | Real | Estimado | No tiene]
 27. ¿Realiza inventarios físicos de materia prima y producto terminado mensualmente?
 28. ¿Tiene documentado el porcentaje de mermas y desperdicios por proceso?
 29. ¿Cuenta con un control estricto de "Producto en Proceso" para su cierre mensual?
-30. ¿Aplica el método de valuación de inventarios PEPS o Promedio?
+30. ¿Qué método de valuación de inventarios aplica? [PEPS | Promedio | Otro]
 31. ¿Tiene contratos de suministro a largo plazo con precios fijos de materias primas?
 32. ¿Maneja esquemas de importación temporal (IMMEX) para insumos?
 33. ¿Cuenta con una estrategia para la recuperación de saldos a favor de IVA por compras?
@@ -58,7 +58,7 @@
 47. ¿Tiene implementada la NOM-035 y NOM-037 en sus centros de trabajo?
 48. ¿Cuenta con brigadas de seguridad y protección civil certificadas?
 49. ¿Realiza exámenes médicos periódicos a trabajadores en áreas críticas?
-50. ¿Tiene contratos con sindicatos nacionales o de empresa?
+50. ¿Cómo es su relación sindical? [Sindicatos Nacionales | Sindicato de Empresa | Ambos | Ninguno]
 51. ¿Maneja expedientes laborales completos con huella y firma de los operarios?
 52. ¿Cuenta con seguros de vida y gastos médicos para mandos medios?
 53. ¿Tiene documentadas las políticas de viáticos y herramientas de trabajo?

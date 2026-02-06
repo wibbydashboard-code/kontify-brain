@@ -566,18 +566,49 @@
                 const progress = ((currentStep + 1) / questions.length) * 100;
                 document.getElementById('progress-bar-fill').style.width = progress + '%';
 
-                qBox.classList.remove('fade-out');
+                // Dinamismo de botones (Limpiar y reconstruir)
+                const optionsContainer = document.querySelector('.options');
+                optionsContainer.innerHTML = '';
 
-                // Reactivar botones
-                document.getElementById('btn-si').disabled = false;
-                document.getElementById('btn-no').disabled = false;
+                if (q.options && q.options.length > 0) {
+                    // Diseño adaptativo según número de opciones
+                    optionsContainer.style.gridTemplateColumns = q.options.length > 2 ? '1fr' : '1fr 1fr';
+
+                    q.options.forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'option-btn';
+                        btn.innerText = opt.toUpperCase();
+                        btn.onclick = () => answer(opt);
+                        optionsContainer.appendChild(btn);
+                    });
+                } else {
+                    // Fallback a SÍ/NO tradicional
+                    optionsContainer.style.gridTemplateColumns = '1fr 1fr';
+
+                    const btnSi = document.createElement('button');
+                    btnSi.className = 'option-btn';
+                    btnSi.id = 'btn-si';
+                    btnSi.innerText = 'SÍ';
+                    btnSi.onclick = () => answer('Sí');
+
+                    const btnNo = document.createElement('button');
+                    btnNo.className = 'option-btn';
+                    btnNo.id = 'btn-no';
+                    btnNo.innerText = 'NO';
+                    btnNo.onclick = () => answer('No');
+
+                    optionsContainer.appendChild(btnSi);
+                    optionsContainer.appendChild(btnNo);
+                }
+
+                qBox.classList.remove('fade-out');
             }, 250);
         }
 
         function answer(val) {
             // Bloqueo para evitar doble clic
-            document.getElementById('btn-si').disabled = true;
-            document.getElementById('btn-no').disabled = true;
+            const btns = document.querySelectorAll('.option-btn');
+            btns.forEach(b => b.disabled = true);
 
             const q = questions[currentStep];
             responses.push({
