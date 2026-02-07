@@ -180,8 +180,22 @@ def submit_quiz():
             diagnostic_result['responses'] = responses
             diagnostic_result['lead_metadata'] = lead_meta
         
-        # 2. Generar PDF
-        pdf_filename = f"KONTIFY_{company_name}_{request_id}.pdf"
+        # 2. Sincronizar CRM ANTES de generar PDF (Sync-First)
+        try:
+            host_url = request.host_url.rstrip('/')
+            pdf_filename = f"KONTIFY_{company_name}_{request_id}.pdf"
+            full_pdf_url = f"{host_url}/reports/{pdf_filename}"
+            print(f"[{request_id}] 📊 Iniciando sincronización CRM...")
+            sheets_ok = notify_all(diagnostic_result, full_pdf_url)
+            if not sheets_ok:
+                print(f"[{request_id}] 🛑 CRM Sync falló. Abortando PDF.")
+                return jsonify({"status": "error", "message": "Error sincronizando CRM.", "requestId": request_id}), 502
+            print(f"[{request_id}] ✅ Sincronización CRM completada.")
+        except Exception as notify_err:
+            print(f"[{request_id}] ⚠️ Error Registro: {str(notify_err)}")
+            return jsonify({"status": "error", "message": "Error sincronizando CRM.", "requestId": request_id}), 502
+
+        # 3. Generar PDF
         pdf_path = os.path.join(REPORTS_DIR, pdf_filename)
         
         try:
@@ -189,16 +203,6 @@ def submit_quiz():
         except Exception as pdf_err:
             print(f"[{request_id}] ❌ Error PDF: {str(pdf_err)}")
             return jsonify({"status": "error", "message": "Error al generar documento.", "requestId": request_id}), 500
-        
-        # 3. Notificar y Registrar (Fallo Seguro)
-        try:
-            host_url = request.host_url.rstrip('/')
-            full_pdf_url = f"{host_url}/reports/{pdf_filename}"
-            print(f"[{request_id}] 📊 Iniciando sincronización CRM...")
-            notify_all(diagnostic_result, full_pdf_url)
-            print(f"[{request_id}] ✅ Sincronización CRM completada.")
-        except Exception as notify_err:
-            print(f"[{request_id}] ⚠️ Error Registro: {str(notify_err)}")
         
         return jsonify({
             "status": "success",

@@ -5,6 +5,7 @@ import gspread
 from dotenv import load_dotenv
 import sys
 import io
+import time
 
 # Forzar UTF-8 en salida estándar para Windows
 if sys.stdout.encoding != 'utf-8':
@@ -75,10 +76,11 @@ def notify_all(diagnostic_data, pdf_url):
     }
     
     print(f"📊 Orquestando registro en Sheets para: {company} | RFC: {rfc}")
-    register_in_sheets(lead_data, score, summary, pdf_url, recommended_service, timestamp)
+    sheets_ok = register_in_sheets(lead_data, score, summary, pdf_url, recommended_service, timestamp)
     
     # 3. Email de Cortesía
     send_courtesy_email(lead, pdf_url)
+    return sheets_ok
 
 def send_webhook_notification(lead, score, recommended_service, pdf_url):
     webhook_url = os.getenv("SLACK_WEBHOOK_URL")
@@ -102,13 +104,12 @@ def send_webhook_notification(lead, score, recommended_service, pdf_url):
 
 def register_in_sheets(lead, score, summary, pdf_url, recommended_service, timestamp):
     sheets_id = os.getenv("GOOGLE_SHEETS_ID", "1zYPKfP1xObqhxkRNmaTjCbjI-jPR1Vec2c9uMHH0sVg")
-    creds_path = 'google_creds.json'
     creds_json = os.getenv("GOOGLE_CREDS_JSON")
     
-    if not (creds_json or os.path.exists(creds_path)):
-        print("⚠️ Google Sheets no configurado (Faltan credenciales en ENV o archivo).")
+    if not creds_json:
+        print("⚠️ Google Sheets no configurado (Faltan credenciales en ENV).")
         log_lead_locally(lead, score, summary, pdf_url)
-        return
+        return False
 
     try:
         from google.oauth2.service_account import Credentials
@@ -135,23 +136,15 @@ def register_in_sheets(lead, score, summary, pdf_url, recommended_service, times
             try:
                 # 2. Intentar JSON plano con reparación de saltos de línea
                 creds_json_clean = re.sub(r'#.*', '', creds_json).strip()
-                creds_json_clean = creds_json_clean.replace('\\\\n', '\\n').replace('\\n', '\n')
+                creds_json_clean = creds_json_clean.replace('\\n', '\n').replace('\n', '\n')
                 info = json.loads(creds_json_clean)
                 creds = Credentials.from_service_account_info(info, scopes=scope)
                 print(f"🔐 CRM: Credenciales ENV (JSON) cargadas ({info.get('client_email')})")
             except Exception as json_err:
-                print(f"⚠️ Fallo al parsear GOOGLE_CREDS_JSON: {json_err}. Intentando fallback...")
-
-        if not creds and os.path.exists(creds_path):
-            # 3. Fallback a archivo local
-            try:
-                creds = Credentials.from_service_account_file(creds_path, scopes=scope)
-                print(f"📂 CRM: Credenciales ARCHIVO cargadas.")
-            except Exception as file_err:
-                print(f"⚠️ Fallo al cargar google_creds.json: {file_err}")
+                print(f"⚠️ Fallo al parsear GOOGLE_CREDS_JSON: {json_err}.")
         
-        if not creds:
-             raise ValueError("No se encontraron credenciales válidas (B64, ENV o Archivo)")
+           if not creds:
+               raise ValueError("No se encontraron credenciales válidas (B64 o ENV JSON)")
             
         client = gspread.authorize(creds)
         print(f"📊 CRM: Conectando a Sheet ID: {sheets_id}...")
@@ -195,20 +188,31 @@ def register_in_sheets(lead, score, summary, pdf_url, recommended_service, times
             safe_str(lead.get('activity', 'N/A'))        # L (11)
         ]
         
-        try:
-            sheet.append_row(row, value_input_option='RAW')
-            print(f"✅ Lead [{lead.get('company')}] registrado en Google Sheets (Fila Lote).")
-        except Exception as api_err:
-            api_err_str = str(api_err)
-            if "403" in api_err_str:
-                print(f"🛑 ERROR DE ACCESO (403): La cuenta de servicio {creds.service_account_email} no tiene permisos de EDITOR en el documento o existe bloqueo de red/Render.")
-            if "invalid_grant" in api_err_str or "unauthorized" in api_err_str.lower():
-                print("🛑 ERROR DE AUTENTICACIÓN: Token inválido/expirado o cuenta de servicio bloqueada.")
-            raise api_err
+        print(f"DATOS ENVIADOS A SHEETS: {json.dumps(row, ensure_ascii=False)}")
+
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                sheet.append_row(row, value_input_option='RAW')
+                print(f"✅ Lead [{lead.get('company')}] registrado en Google Sheets (Fila Lote).")
+                return True
+            except Exception as api_err:
+                api_err_str = str(api_err)
+                if "403" in api_err_str:
+                    print(f"🛑 ERROR DE ACCESO (403): La cuenta de servicio {creds.service_account_email} no tiene permisos de EDITOR en el documento o existe bloqueo de red/Render.")
+                if "invalid_grant" in api_err_str or "unauthorized" in api_err_str.lower():
+                    print("🛑 ERROR DE AUTENTICACIÓN: Token inválido/expirado o cuenta de servicio bloqueada.")
+                if attempt < max_retries:
+                    wait_s = 2 * attempt
+                    print(f"⏳ Reintentando Google Sheets en {wait_s}s (intento {attempt}/{max_retries})...")
+                    time.sleep(wait_s)
+                else:
+                    raise api_err
 
     except Exception as e:
         print(f"❌ Error Crítico en Google Sheets: {str(e)}")
         log_lead_locally(lead, score, summary, pdf_url) # Fallback seguro
+        return False
 
 def log_lead_locally(lead, score, summary, pdf_url):
     log_path = 'leads_log.jsonl'
