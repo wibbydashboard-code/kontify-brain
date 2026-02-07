@@ -24,7 +24,7 @@ def validate_before_package(skill_path: Path) -> bool:
         return False
 
     try:
-        with open(skill_md) as f:
+        with open(skill_md, encoding="utf-8") as f:
             content = f.read()
 
         if not content.startswith("---"):
@@ -71,7 +71,7 @@ def package_skill(skill_path: Path, output_dir: Path) -> bool:
 
     # Get skill name
     skill_md = skill_path / "SKILL.md"
-    with open(skill_md) as f:
+    with open(skill_md, encoding="utf-8") as f:
         content = f.read()
         lines = content.split("\n")
         end_idx = next(i for i in range(1, len(lines)) if lines[i] == "---")

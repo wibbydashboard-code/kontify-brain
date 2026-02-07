@@ -118,6 +118,7 @@ def register_in_sheets(lead, score, summary, pdf_url, recommended_service, times
         import re
         import base64
 
+        creds = None
         creds_b64 = os.getenv("GOOGLE_CREDS_BASE64")
         
         if creds_b64:
@@ -128,10 +129,9 @@ def register_in_sheets(lead, score, summary, pdf_url, recommended_service, times
                 creds = Credentials.from_service_account_info(info, scopes=scope)
                 print(f"🔐 CRM: Credenciales BASE64 cargadas ({info.get('client_email')})")
             except Exception as b64_err:
-                print(f"⚠️ Fallo al decodificar GOOGLE_CREDS_BASE64: {b64_err}")
-                creds = None
+                print(f"⚠️ Fallo al decodificar GOOGLE_CREDS_BASE64: {b64_err}. Intentando fallback...")
         
-        if not globals().get('creds') and creds_json:
+        if not creds and creds_json:
             try:
                 # 2. Intentar JSON plano con reparación de saltos de línea
                 creds_json_clean = re.sub(r'#.*', '', creds_json).strip()
@@ -140,15 +140,17 @@ def register_in_sheets(lead, score, summary, pdf_url, recommended_service, times
                 creds = Credentials.from_service_account_info(info, scopes=scope)
                 print(f"🔐 CRM: Credenciales ENV (JSON) cargadas ({info.get('client_email')})")
             except Exception as json_err:
-                print(f"⚠️ Fallo al parsear GOOGLE_CREDS_JSON: {json_err}")
-                creds = None
+                print(f"⚠️ Fallo al parsear GOOGLE_CREDS_JSON: {json_err}. Intentando fallback...")
 
-        if not globals().get('creds') and os.path.exists(creds_path):
+        if not creds and os.path.exists(creds_path):
             # 3. Fallback a archivo local
-            creds = Credentials.from_service_account_file(creds_path, scopes=scope)
-            print(f"📂 CRM: Credenciales ARCHIVO cargadas.")
+            try:
+                creds = Credentials.from_service_account_file(creds_path, scopes=scope)
+                print(f"📂 CRM: Credenciales ARCHIVO cargadas.")
+            except Exception as file_err:
+                print(f"⚠️ Fallo al cargar google_creds.json: {file_err}")
         
-        if not globals().get('creds'):
+        if not creds:
              raise ValueError("No se encontraron credenciales válidas (B64, ENV o Archivo)")
             
         client = gspread.authorize(creds)
@@ -160,6 +162,11 @@ def register_in_sheets(lead, score, summary, pdf_url, recommended_service, times
             sheet = spreadsheet.get_worksheet(0) # Más seguro que .sheet1
             print(f"✅ CRM: Conectado exitosamente a '{spreadsheet.title}'")
         except Exception as sheet_err:
+            err_str = str(sheet_err)
+            if "403" in err_str:
+                print("🛑 CRM ERROR 403: Acceso denegado. Verifica permisos de la cuenta de servicio y posibles bloqueos en Render.")
+            elif "invalid_grant" in err_str or "unauthorized" in err_str.lower():
+                print("🛑 CRM ERROR: Token inválido/expirado o cuenta de servicio bloqueada.")
             print(f"🛑 CRM ERROR: No se pudo abrir la hoja. ¿ID correcto? ¿Compartida con el correo anterior? Error: {sheet_err}")
             raise sheet_err
         
@@ -192,8 +199,11 @@ def register_in_sheets(lead, score, summary, pdf_url, recommended_service, times
             sheet.append_row(row, value_input_option='RAW')
             print(f"✅ Lead [{lead.get('company')}] registrado en Google Sheets (Fila Lote).")
         except Exception as api_err:
-            if "403" in str(api_err):
-                print(f"🛑 ERROR DE ACCESO (403): La cuenta de servicio {creds.service_account_email} no tiene permisos de EDITOR en el documento.")
+            api_err_str = str(api_err)
+            if "403" in api_err_str:
+                print(f"🛑 ERROR DE ACCESO (403): La cuenta de servicio {creds.service_account_email} no tiene permisos de EDITOR en el documento o existe bloqueo de red/Render.")
+            if "invalid_grant" in api_err_str or "unauthorized" in api_err_str.lower():
+                print("🛑 ERROR DE AUTENTICACIÓN: Token inválido/expirado o cuenta de servicio bloqueada.")
             raise api_err
 
     except Exception as e:

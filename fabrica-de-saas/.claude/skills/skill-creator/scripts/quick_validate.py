@@ -32,7 +32,7 @@ def validate_skill(skill_path: Path) -> bool:
 
     # Parse and validate SKILL.md
     try:
-        with open(skill_md, "r") as f:
+        with open(skill_md, "r", encoding="utf-8") as f:
             content = f.read()
 
         # Extract frontmatter

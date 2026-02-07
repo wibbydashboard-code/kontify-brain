@@ -18,11 +18,18 @@ if tools_dir not in sys.path:
 from process_diagnostic import run_diagnostic
 from pdf_generator_v2 import generate_pdf_final
 from notificator import notify_all
+from sheets_connection_test import run_boot_test
 
 # Asegurar que las carpetas existan
 os.makedirs('.tmp', exist_ok=True)
 REPORTS_DIR = os.path.join(os.getcwd(), 'reports')
 os.makedirs(REPORTS_DIR, exist_ok=True)
+
+try:
+    run_boot_test()
+    print("✅ BOOT-TEST: Google Sheets conectado y A1 actualizado.")
+except Exception as e:
+    print(f"🛑 CRITICAL ERROR: ERROR DE CREDENCIALES GOOGLE: {e}")
 
 @app.route('/health')
 def health():
@@ -33,6 +40,32 @@ def serve_index():
     # En un entorno de desarrollo, el path relativo a public depende de donde se ejecute
     public_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../public'))
     return send_from_directory(public_dir, 'index.html')
+
+def _normalize_responses(raw_responses):
+    normalized = []
+    if isinstance(raw_responses, list):
+        for item in raw_responses:
+            if isinstance(item, dict):
+                q = item.get('question') or item.get('q') or item.get('text')
+                if not q:
+                    q_index = item.get('q_index') or item.get('num') or item.get('id')
+                    if q_index is not None:
+                        q = f"Q{q_index}"
+                a = item.get('answer') or item.get('a') or item.get('response') or item.get('value')
+
+                if q or a is not None:
+                    entry = {
+                        "question": str(q).strip() if q else "N/A",
+                        "answer": str(a).strip() if a is not None else "N/A"
+                    }
+                    if item.get('q_index') is not None:
+                        entry["q_index"] = item.get('q_index')
+                    if item.get('category_id') or item.get('cat'):
+                        entry["category_id"] = item.get('category_id') or item.get('cat')
+                    normalized.append(entry)
+            elif isinstance(item, str):
+                normalized.append({"question": item.strip(), "answer": "N/A"})
+    return normalized
 
 @app.route('/api/submit', methods=['POST'])
 def submit_quiz():
@@ -70,8 +103,15 @@ def submit_quiz():
         if not billing_range: missing.append("Rango de Facturación")
         
         if missing:
-            error_msg = f"BLOQUEO POR PROTOCOLO: Faltan datos críticos: {', '.join(missing)}"
-            print(f"[{request_id}] 🛑 ERROR DE VALIDACIÓN: {error_msg}")
+            error_msg = "Falta de Datos Maestros: RFC y Giro son obligatorios para el diagnóstico estratégico"
+            log_entry = {
+                "level": "error",
+                "requestId": request_id,
+                "error": "VALIDATION_ERROR",
+                "message": error_msg,
+                "missing": missing
+            }
+            print(json.dumps(log_entry, ensure_ascii=False))
             return jsonify({
                 "status": "error", 
                 "message": error_msg, 
@@ -87,32 +127,58 @@ def submit_quiz():
         lead_meta['rfc'] = rfc                  # notificator busca 'rfc'
         lead_meta['activity'] = giro            # notificator busca 'activity'
         
-        print(f"[{request_id}] 🧪 KONTIFY ENGINE v2.2.0 (MODO SIMULACIÓN ACTIVADO)")
+        print(f"[{request_id}] 🧪 KONTIFY ENGINE v2.2.1 (MODO PRODUCCIÓN ACTIVO)")
         print(f"[{request_id}] 🔍 Validando Datos: Empresa={company_name_raw}, RFC={rfc}, Giro={giro}")
 
-        # 2. PROCESAMIENTO IA (BLOQUEADO POR VALIDACIÓN DE COSTOS)
-        # diagnostic_result = run_diagnostic(data)
-        
-        # MOCK FORZADO - NUNCA 0.0%
-        diagnostic_result = {
-            "risk_assessment": {
-                "overall_risk_score": 88.5,
-                "risk_level": "RIESGO CRÍTICO (SIMULACIÓN)",
-                "critical_finding": "Validación de conexión Render-GitHub-Sheets activa.",
-                "hallazgos_tecnicos": [
-                    f"RFC Detectado: {rfc} - VALIDADO",
-                    f"Giro Detectado: {giro} - REGISTRADO",
-                    "Motor de IA: En espera de confirmación de CRM."
-                ]
-            },
-            "sales_pitch": "PROCESO DE PRUEBA: El flujo de datos hacia Google Sheets está siendo auditado.",
-            "markdown_content": "### AUDITORÍA DE INFRAESTRUCTURA\n- **Modo:** Zero-Cost Validation\n- **Target:** Columna K (RFC) y L (Giro)\n- **Estatus:** Transmitiendo...",
-            "admin_report": {
-                "summary": f"Sincronización manual: {company_name_raw}"
-            },
-            "responses": data.get('responses', []),
-            "lead_metadata": lead_meta
-        }
+        # 2. PROCESAMIENTO IA (PMDS-IA)
+        responses = _normalize_responses(data.get('responses', []))
+        if not responses:
+            error_msg = "BLOQUEO POR PROTOCOLO: Respuestas del cuestionario vacías o inválidas."
+            print(f"[{request_id}] 🛑 ERROR DE VALIDACIÓN: {error_msg}")
+            return jsonify({
+                "status": "error",
+                "message": error_msg,
+                "requestId": request_id
+            }), 400
+
+        data_for_ai = dict(data)
+        data_for_ai['responses'] = responses
+        data_for_ai['lead_metadata'] = lead_meta
+
+        print(json.dumps({"requestId": request_id, "payload_for_gemini": data_for_ai}, ensure_ascii=False))
+        diagnostic_result = run_diagnostic(data_for_ai)
+        if isinstance(diagnostic_result, dict) and diagnostic_result.get("error"):
+            status_code = int(diagnostic_result.get("status_code", 500))
+            print(f"[{request_id}] ⚠️ IA Falló: {diagnostic_result.get('error')}")
+            if status_code == 422:
+                return jsonify({
+                    "status": "error",
+                    "message": diagnostic_result.get("error"),
+                    "requestId": request_id
+                }), 422
+            diagnostic_result = {
+                "risk_assessment": {
+                    "overall_risk_score": 55,
+                    "risk_level": "VULNERABILIDAD DETECTADA",
+                    "critical_finding": "Fallo IA: salida de contingencia activada.",
+                    "hallazgos_tecnicos": [
+                        "IA no respondió o respondió inválido.",
+                        "Se generó un reporte mínimo para continuidad operativa.",
+                        f"RFC Detectado: {rfc} - VALIDADO",
+                        f"Giro Detectado: {giro} - REGISTRADO"
+                    ]
+                },
+                "sales_pitch": "Se requiere reintento de diagnóstico con conectividad estable.",
+                "markdown_content": "### CONTINGENCIA PMDS-IA\n- Se activó salida mínima por error en IA.\n- Verificar credenciales y salud de la API.",
+                "admin_report": {
+                    "summary": f"Fallo IA en solicitud {request_id}: {diagnostic_result.get('error')}"
+                },
+                "responses": responses,
+                "lead_metadata": lead_meta
+            }
+        else:
+            diagnostic_result['responses'] = responses
+            diagnostic_result['lead_metadata'] = lead_meta
         
         # 2. Generar PDF
         pdf_filename = f"KONTIFY_{company_name}_{request_id}.pdf"
@@ -136,7 +202,7 @@ def submit_quiz():
         
         return jsonify({
             "status": "success",
-            "version": "2.2.0-SIM",
+            "version": "2.2.1",
             "report_url": f"/reports/{pdf_filename}",
             "requestId": request_id
         })
@@ -169,6 +235,15 @@ def get_questions(niche_id):
         return jsonify({"error": "Archivo de diagnóstico no encontrado"}), 404
         
     import re
+    def _looks_like_options(opt_raw):
+        opt_raw_upper = opt_raw.upper()
+        return "OPTIONS" in opt_raw_upper or "|" in opt_raw
+
+    def _parse_options_raw(opt_raw):
+        opt_raw = re.sub(r'^\s*OPTIONS?\s*:\s*', '', opt_raw, flags=re.IGNORECASE).strip()
+        if not opt_raw:
+            return []
+        return [o.strip() for o in opt_raw.split('|') if o.strip()]
     questions = []
     current_category = "General"
     
@@ -197,22 +272,20 @@ def get_questions(niche_id):
                 
                 # REGLA 1: Opciones en la MISMA línea finalizando en [ ... ]
                 # Ejemplo: 1. ¿Pregunta? [SÍ | NO] o 1. ¿Pregunta? [A | B]
-                opt_same_line = re.search(r'\[([^\]]+)\]$', full_text)
-                if opt_same_line:
+                opt_same_line = re.search(r'\[([^\]]+)\]', full_text)
+                if opt_same_line and _looks_like_options(opt_same_line.group(1)):
                     opt_raw = opt_same_line.group(1)
-                    if "OPTIONS:" in opt_raw:
-                        opt_raw = opt_raw.replace("OPTIONS:", "").strip()
-                    options = [o.strip() for o in opt_raw.split('|')]
+                    options = _parse_options_raw(opt_raw)
                     full_text = full_text.replace(opt_same_line.group(0), '').strip()
                 else:
                     # REGLA 2: Opciones en la SIGUIENTE línea
                     # Verificamos si existe la siguiente línea y si tiene el tag [OPTIONS: ...] o simplemente [ ... ]
                     if i + 1 < len(lines):
                         next_line = lines[i+1].strip()
-                        opt_next_line = re.search(r'^\[(?:OPTIONS:\s*)?([^\]]+)\]$', next_line)
-                        if opt_next_line:
+                        opt_next_line = re.search(r'\[([^\]]+)\]', next_line)
+                        if opt_next_line and _looks_like_options(opt_next_line.group(1)):
                             opt_raw = opt_next_line.group(1)
-                            options = [o.strip() for o in opt_raw.split('|')]
+                            options = _parse_options_raw(opt_raw)
                             i += 1 # Consumimos la línea de opciones
                 
                 questions.append({

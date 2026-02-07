@@ -32,7 +32,7 @@ def cleanup_production():
     # 2. Limpiar Log Local
     log_path = 'leads_log.jsonl'
     if os.path.exists(log_path):
-        with open(log_path, 'w') as f:
+        with open(log_path, 'w', encoding='utf-8') as f:
             f.write("")
         print("✅ Log local (leads_log.jsonl) reiniciado.")
     

@@ -17,7 +17,7 @@ def run_stress_test_pena():
     # Datos Críticos para prueba de fuego
     payload = {
         "lead_metadata": {
-            "company_name": "Constructora e Inmobiliaria Peña & Asociados S.A.",
+            "company_name": "Construcción e Ingeniería Peña S.A.",
             "contact_name": "Ing. José Peña",
             "contact_role": "CEO Auditor",
             "contact_email": "jose.pena@constructora.com",
@@ -25,7 +25,7 @@ def run_stress_test_pena():
             "niche_id": "constructora",
             "billing_range": "50M - 100M",
             "rfc": "CP01020304-56", # Con guión para probar sanitización
-            "main_activity": "Construcción de Naves Industriales y Bodegas Inteligentes",
+            "main_activity": "Construcción e Ingeniería Industrial",
             "financial_data": {
                 "sales": "90M",
                 "profit": "15M",
